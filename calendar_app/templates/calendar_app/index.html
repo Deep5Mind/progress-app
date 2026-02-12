@@ -1,0 +1,420 @@
+{% extends 'base.html' %}
+
+{% block title %}PROGRESS - Calendrier{% endblock %}
+{% block page_title %}Calendrier & Planning{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    {% if not student %}
+    <!-- ═══════ État vide ═══════ -->
+    <div class="text-center py-16">
+        <i data-lucide="user-plus" class="w-12 h-12 text-pg-text-xs mx-auto mb-4" stroke-width="1.25"></i>
+        <h2 class="text-lg font-medium text-pg-text mb-1">Aucun profil étudiant</h2>
+        <p class="text-sm text-pg-text-s">Créez un profil via l'admin pour commencer.</p>
+    </div>
+    {% else %}
+
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- SECTION 1 : En-tête Calendrier                              -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div class="flex items-start gap-4">
+        <div class="w-10 h-10 rounded-xl bg-pastel-blue flex items-center justify-center shrink-0 mt-1">
+            <i data-lucide="calendar-days" class="w-5 h-5 text-pastel-blue-t" stroke-width="1.5"></i>
+        </div>
+        <div>
+            <h1 class="text-3xl font-bold text-pg-text">Calendrier & Planning</h1>
+            <p class="mt-1 text-pg-text-s text-sm">Organise ton emploi du temps et ne rate aucune échéance.</p>
+        </div>
+    </div>
+
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- SECTION 2 : Grille principale (Calendrier + Sidebar)        -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- ──────────────────────────────────────────────────── -->
+        <!-- COLONNE GAUCHE (2/3) : Calendrier mensuel             -->
+        <!-- ──────────────────────────────────────────────────── -->
+        <div class="lg:col-span-2 space-y-6">
+
+            <!-- ── Navigation mois ── -->
+            <div class="bg-pg-surface border border-pg-border rounded-xl p-5">
+                <div class="flex items-center justify-between mb-5">
+                    <a href="?year={{ prev_year }}&month={{ prev_month }}"
+                       class="inline-flex items-center gap-1 text-sm text-pg-text-s hover:text-pg-text px-2 py-1 rounded-md hover:bg-pg-hover">
+                        <i data-lucide="chevron-left" class="w-4 h-4" stroke-width="1.5"></i>
+                        <span class="hidden sm:inline">Précédent</span>
+                    </a>
+                    <h2 class="text-lg font-semibold text-pg-text">{{ month_name }} {{ year }}</h2>
+                    <a href="?year={{ next_year }}&month={{ next_month }}"
+                       class="inline-flex items-center gap-1 text-sm text-pg-text-s hover:text-pg-text px-2 py-1 rounded-md hover:bg-pg-hover">
+                        <span class="hidden sm:inline">Suivant</span>
+                        <i data-lucide="chevron-right" class="w-4 h-4" stroke-width="1.5"></i>
+                    </a>
+                </div>
+
+                <!-- ── En-tête jours de la semaine ── -->
+                <div class="grid grid-cols-7 gap-px mb-1">
+                    {% for jour in jours_semaine %}
+                    <div class="text-center text-xxs font-medium text-pg-text-xs uppercase tracking-wider py-2">
+                        {{ jour }}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- ── Grille du calendrier ── -->
+                <div class="grid grid-cols-7 gap-px bg-pg-border rounded-lg overflow-hidden">
+                    {% for week in weeks %}
+                        {% for day in week %}
+                            {% if day %}
+                            <div class="bg-pg-surface min-h-[80px] p-1.5 relative group
+                                        {% if day.is_today %}ring-2 ring-inset ring-pg-accent/40 bg-pastel-mint/30{% endif %}
+                                        {% if day.is_past and not day.is_today %}opacity-60{% endif %}">
+
+                                <!-- Numéro du jour -->
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-xs font-medium
+                                        {% if day.is_today %}text-pg-accent font-bold{% else %}text-pg-text{% endif %}">
+                                        {{ day.number }}
+                                    </span>
+                                    {% if day.is_today %}
+                                    <span class="w-1.5 h-1.5 rounded-full bg-pg-accent"></span>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Événements du jour (max 3 affichés) -->
+                                {% for event in day.events %}
+                                    {% if forloop.counter <= 3 %}
+                                    <div class="text-xxs px-1 py-0.5 rounded mb-0.5 truncate cursor-default
+                                                {{ event.color_classes.bg }} {{ event.color_classes.text }}
+                                                {% if event.is_completed %}line-through opacity-60{% endif %}"
+                                         title="{{ event.title }}{% if event.start_time %} · {{ event.start_time|time:'H:i' }}{% endif %}">
+                                        {{ event.title }}
+                                    </div>
+                                    {% endif %}
+                                    {% if forloop.counter == 4 %}
+                                    <div class="text-xxs text-pg-text-xs px-1">
+                                        +{{ day.events|length|add:"-3" }} autre{{ day.events|length|add:"-3"|pluralize:"s" }}
+                                    </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <!-- Jour vide (hors mois) -->
+                            <div class="bg-pg-bg/50 min-h-[80px]"></div>
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+
+                <!-- Légende des types -->
+                <div class="flex flex-wrap gap-3 mt-4 pt-3 border-t border-pg-border">
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-2 h-2 rounded-full bg-blue-400"></div>
+                        <span class="text-xxs text-pg-text-s">Cours</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-2 h-2 rounded-full bg-red-400"></div>
+                        <span class="text-xxs text-pg-text-s">Examen</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-2 h-2 rounded-full bg-amber-400"></div>
+                        <span class="text-xxs text-pg-text-s">Devoir</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-2 h-2 rounded-full bg-purple-400"></div>
+                        <span class="text-xxs text-pg-text-s">Révision</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-2 h-2 rounded-full bg-green-400"></div>
+                        <span class="text-xxs text-pg-text-s">Personnel</span>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- ══════════════════════════════════════════════════ -->
+            <!-- BLOC : Événements du jour                         -->
+            <!-- ══════════════════════════════════════════════════ -->
+            <div class="bg-pg-surface border border-pg-border rounded-xl p-5">
+                <div class="flex items-center gap-2 mb-4">
+                    <div class="w-6 h-6 rounded-md bg-pastel-mint flex items-center justify-center">
+                        <i data-lucide="sun" class="w-3.5 h-3.5 text-pastel-mint-t" stroke-width="1.5"></i>
+                    </div>
+                    <h2 class="text-sm font-semibold text-pg-text">Aujourd'hui</h2>
+                    <span class="text-xxs text-pg-text-xs ml-1">{{ today|date:"l d F Y" }}</span>
+                </div>
+
+                {% if today_events %}
+                <div class="space-y-2">
+                    {% for event in today_events %}
+                    <div class="flex items-center gap-3 p-3 rounded-lg border border-pg-border hover:bg-pg-hover group
+                                {% if event.is_completed %}opacity-60{% endif %}">
+                        <!-- Toggle complétion -->
+                        <form action="{% url 'calendar:toggle_event' event.id %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit"
+                                class="w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0
+                                       {% if event.is_completed %}border-pastel-green-t bg-pastel-green{% else %}border-pg-border hover:border-pg-accent{% endif %}"
+                                title="{% if event.is_completed %}Marquer non terminé{% else %}Marquer terminé{% endif %}">
+                                {% if event.is_completed %}
+                                <i data-lucide="check" class="w-3 h-3 text-pastel-green-t" stroke-width="2"></i>
+                                {% endif %}
+                            </button>
+                        </form>
+
+                        <!-- Détails -->
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm text-pg-text font-medium {% if event.is_completed %}line-through{% endif %}">
+                                {{ event.title }}
+                            </p>
+                            <div class="flex items-center gap-2 mt-0.5">
+                                {% if event.start_time %}
+                                <span class="text-xxs text-pg-text-xs">
+                                    <i data-lucide="clock" class="w-3 h-3 inline-block mr-0.5" stroke-width="1.5"></i>
+                                    {{ event.start_time|time:"H:i" }}{% if event.end_time %} - {{ event.end_time|time:"H:i" }}{% endif %}
+                                </span>
+                                {% endif %}
+                                {% if event.is_all_day %}
+                                <span class="text-xxs text-pg-text-xs">Toute la journée</span>
+                                {% endif %}
+                                {% if event.description %}
+                                <span class="text-xxs text-pg-text-xs truncate">{{ event.description }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Badge type -->
+                        <span class="text-xxs {{ event.color_classes.text }} {{ event.color_classes.bg }} px-2 py-0.5 rounded-full shrink-0">
+                            {{ event.get_event_type_display }}
+                        </span>
+
+                        <!-- Bouton supprimer (apparaît au hover) -->
+                        <form action="{% url 'calendar:delete_event' event.id %}" method="POST"
+                              class="opacity-0 group-hover:opacity-100 shrink-0">
+                            {% csrf_token %}
+                            <button type="submit"
+                                class="p-1 rounded text-pg-text-xs hover:text-pastel-rose-t hover:bg-pastel-rose"
+                                title="Supprimer">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5" stroke-width="1.5"></i>
+                            </button>
+                        </form>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-6">
+                    <i data-lucide="coffee" class="w-8 h-8 text-pg-text-xs mx-auto mb-2" stroke-width="1.25"></i>
+                    <p class="text-sm text-pg-text-s">Aucun événement aujourd'hui</p>
+                    <p class="text-xxs text-pg-text-xs mt-0.5">Profite de cette journée libre !</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+
+        <!-- ──────────────────────────────────────────────────── -->
+        <!-- COLONNE DROITE (1/3) : Formulaire + Prochains        -->
+        <!-- ──────────────────────────────────────────────────── -->
+        <div class="space-y-6">
+
+            <!-- ══════════════════════════════════════════════════ -->
+            <!-- FORMULAIRE : Ajouter un événement                 -->
+            <!-- ══════════════════════════════════════════════════ -->
+            <div class="bg-pg-surface border border-pg-border rounded-xl p-5" x-data="{ showForm: false }">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-md bg-pastel-violet flex items-center justify-center">
+                            <i data-lucide="plus-circle" class="w-3.5 h-3.5 text-pastel-violet-t" stroke-width="1.5"></i>
+                        </div>
+                        <h3 class="text-sm font-semibold text-pg-text">Nouvel événement</h3>
+                    </div>
+                    <button @click="showForm = !showForm"
+                        class="inline-flex items-center gap-1 text-xs text-pg-accent hover:text-pg-accent-h font-medium px-2 py-1 rounded-md hover:bg-pg-hover">
+                        <i data-lucide="plus" class="w-3.5 h-3.5" stroke-width="1.5" x-show="!showForm"></i>
+                        <i data-lucide="x" class="w-3.5 h-3.5" stroke-width="1.5" x-show="showForm" x-cloak></i>
+                        <span x-text="showForm ? 'Fermer' : 'Ajouter'"></span>
+                    </button>
+                </div>
+
+                <!-- Formulaire (toggle Alpine) -->
+                <form action="{% url 'calendar:add_event' %}" method="POST"
+                      x-show="showForm" x-transition x-cloak
+                      class="space-y-3">
+                    {% csrf_token %}
+
+                    <!-- Titre -->
+                    <div>
+                        <label class="block text-xs font-medium text-pg-text-s mb-1">Titre</label>
+                        <input type="text" name="title" required placeholder="Ex: Examen de Python"
+                               class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text
+                                      focus:ring-1 focus:ring-pg-accent focus:border-pg-accent placeholder:text-pg-text-xs">
+                    </div>
+
+                    <!-- Type d'événement -->
+                    <div>
+                        <label class="block text-xs font-medium text-pg-text-s mb-1">Type</label>
+                        <select name="event_type"
+                                class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text
+                                       focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                            {% for type_code, type_label in event_types %}
+                            <option value="{{ type_code }}">{{ type_label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- Date -->
+                    <div>
+                        <label class="block text-xs font-medium text-pg-text-s mb-1">Date</label>
+                        <input type="date" name="start_date" required value="{{ today|date:'Y-m-d' }}"
+                               class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text
+                                      focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                    </div>
+
+                    <!-- Horaires (masqués si toute la journée) -->
+                    <div x-data="{ allDay: false }">
+                        <div class="flex items-center gap-2 mb-2">
+                            <input type="checkbox" name="is_all_day" id="is_all_day"
+                                   @change="allDay = $el.checked"
+                                   class="w-4 h-4 rounded border-pg-border text-pg-accent focus:ring-pg-accent">
+                            <label for="is_all_day" class="text-xs text-pg-text-s">Toute la journée</label>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2" x-show="!allDay">
+                            <div>
+                                <label class="block text-xs font-medium text-pg-text-s mb-1">Début</label>
+                                <input type="time" name="start_time"
+                                       class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text
+                                              focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-pg-text-s mb-1">Fin</label>
+                                <input type="time" name="end_time"
+                                       class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text
+                                              focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div>
+                        <label class="block text-xs font-medium text-pg-text-s mb-1">Description (optionnel)</label>
+                        <textarea name="description" rows="2" placeholder="Notes, salle, lien..."
+                                  class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text
+                                         focus:ring-1 focus:ring-pg-accent focus:border-pg-accent placeholder:text-pg-text-xs resize-none"></textarea>
+                    </div>
+
+                    <!-- Rappel -->
+                    <div x-data="{ reminder: false }">
+                        <div class="flex items-center gap-2 mb-2">
+                            <input type="checkbox" name="reminder" id="reminder"
+                                   @change="reminder = $el.checked"
+                                   class="w-4 h-4 rounded border-pg-border text-pg-accent focus:ring-pg-accent">
+                            <label for="reminder" class="text-xs text-pg-text-s">Activer le rappel</label>
+                        </div>
+                        <div x-show="reminder" x-transition class="flex items-center gap-2">
+                            <input type="number" name="reminder_days" value="1" min="1" max="14"
+                                   class="w-16 text-sm border border-pg-border rounded-lg px-2 py-1.5 bg-white text-pg-text text-center
+                                          focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                            <span class="text-xs text-pg-text-s">jour(s) avant</span>
+                        </div>
+                    </div>
+
+                    <!-- Boutons -->
+                    <div class="flex justify-end gap-2 pt-1">
+                        <button type="button" @click="showForm = false"
+                            class="px-3 py-1.5 text-xs text-pg-text-s hover:text-pg-text rounded-lg hover:bg-pg-hover">
+                            Annuler
+                        </button>
+                        <button type="submit"
+                            class="px-4 py-1.5 text-xs text-white bg-pg-accent hover:bg-pg-accent-h rounded-lg font-medium">
+                            Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+
+            <!-- ══════════════════════════════════════════════════ -->
+            <!-- BLOC : Prochains événements                       -->
+            <!-- ══════════════════════════════════════════════════ -->
+            <div class="bg-pg-surface border border-pg-border rounded-xl p-5">
+                <div class="flex items-center gap-2 mb-4">
+                    <div class="w-6 h-6 rounded-md bg-pastel-peach flex items-center justify-center">
+                        <i data-lucide="clock" class="w-3.5 h-3.5 text-pastel-peach-t" stroke-width="1.5"></i>
+                    </div>
+                    <h3 class="text-sm font-semibold text-pg-text">Prochains événements</h3>
+                </div>
+
+                {% if upcoming %}
+                <div class="space-y-2.5">
+                    {% for event in upcoming %}
+                    <div class="flex items-start gap-3 p-2.5 rounded-lg hover:bg-pg-hover group">
+                        <!-- Point de couleur du type -->
+                        <div class="w-2 h-2 rounded-full mt-1.5 shrink-0 {{ event.color_classes.dot }}"></div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm text-pg-text {% if event.is_completed %}line-through text-pg-text-xs{% endif %}">
+                                {{ event.title }}
+                            </p>
+                            <div class="flex items-center gap-1.5 mt-0.5">
+                                {% if event.is_today %}
+                                <span class="text-xxs font-medium text-pg-accent">Aujourd'hui</span>
+                                {% else %}
+                                <span class="text-xxs text-pg-text-xs">{{ event.start_date|date:"D d M" }}</span>
+                                {% endif %}
+                                {% if event.start_time %}
+                                <span class="text-xxs text-pg-text-xs">{{ event.start_time|time:"H:i" }}</span>
+                                {% endif %}
+                                {% if event.is_all_day %}
+                                <span class="text-xxs text-pg-text-xs">Toute la journée</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <!-- Badge type -->
+                        <span class="text-xxs {{ event.color_classes.text }} {{ event.color_classes.bg }} px-1.5 py-0.5 rounded shrink-0">
+                            {{ event.get_event_type_display }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-6">
+                    <i data-lucide="calendar-check" class="w-8 h-8 text-pg-text-xs mx-auto mb-2" stroke-width="1.25"></i>
+                    <p class="text-sm text-pg-text-s">Aucun événement à venir</p>
+                </div>
+                {% endif %}
+            </div>
+
+
+            <!-- ══════════════════════════════════════════════════ -->
+            <!-- BLOC : Statistiques rapides — Jaune vanille       -->
+            <!-- ══════════════════════════════════════════════════ -->
+            <div class="bg-pg-surface border border-pg-border rounded-xl p-5">
+                <div class="flex items-center gap-2 mb-4">
+                    <div class="w-6 h-6 rounded-md bg-pastel-yellow flex items-center justify-center">
+                        <i data-lucide="bar-chart-2" class="w-3.5 h-3.5 text-pastel-yellow-t" stroke-width="1.5"></i>
+                    </div>
+                    <h3 class="text-sm font-semibold text-pg-text">Ce mois</h3>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-pastel-blue/30 rounded-lg p-3 text-center">
+                        <p class="text-lg font-bold text-pastel-blue-t">{{ today_events|length }}</p>
+                        <p class="text-xxs text-pg-text-s">Aujourd'hui</p>
+                    </div>
+                    <div class="bg-pastel-pink/30 rounded-lg p-3 text-center">
+                        <p class="text-lg font-bold text-pastel-pink-t">{{ upcoming|length }}</p>
+                        <p class="text-xxs text-pg-text-s">À venir</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    {% endif %}
+</div>
+{% endblock %}
+
+<!-- MutationObserver Lucide géré globalement dans base.html -->

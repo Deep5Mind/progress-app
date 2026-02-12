@@ -1,0 +1,560 @@
+{% extends 'base.html' %}
+
+{% block title %}PROGRESS - Contacts & Documents{% endblock %}
+{% block page_title %}Contacts & Documents{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    {% if not student %}
+    <div class="text-center py-16">
+        <i data-lucide="users" class="w-12 h-12 text-pg-text-xs mx-auto mb-4" stroke-width="1.25"></i>
+        <h2 class="text-lg font-medium text-pg-text mb-1">Aucun profil étudiant</h2>
+        <p class="text-sm text-pg-text-s">Créez un profil via l'admin pour commencer.</p>
+    </div>
+    {% else %}
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- EN-TÊTE                                                     -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div class="flex items-start gap-4">
+        <div class="w-10 h-10 rounded-xl bg-pastel-peach flex items-center justify-center shrink-0 mt-1">
+            <i data-lucide="users" class="w-5 h-5 text-pastel-peach-t" stroke-width="1.5"></i>
+        </div>
+        <div>
+            <h1 class="text-3xl font-bold text-pg-text">Contacts & Documents</h1>
+            <p class="mt-1 text-pg-text-s text-sm">Gère ton répertoire de professeurs et génère tes documents académiques.</p>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- RÉSUMÉ RAPIDE (3 cartes)                                    -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-3 gap-4">
+        <div class="bg-pg-surface border border-pg-border rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+                <div class="w-7 h-7 rounded-lg bg-pastel-green flex items-center justify-center">
+                    <i data-lucide="users" class="w-3.5 h-3.5 text-pastel-green-t" stroke-width="1.5"></i>
+                </div>
+            </div>
+            <p class="text-xl font-bold text-pg-text">{{ total_professors }}</p>
+            <p class="text-xxs text-pg-text-xs mt-0.5">Professeur{{ total_professors|pluralize:"s" }}</p>
+        </div>
+        <div class="bg-pg-surface border border-pg-border rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+                <div class="w-7 h-7 rounded-lg bg-pastel-blue flex items-center justify-center">
+                    <i data-lucide="message-circle" class="w-3.5 h-3.5 text-pastel-blue-t" stroke-width="1.5"></i>
+                </div>
+            </div>
+            <p class="text-xl font-bold text-pg-text">{{ total_contacts }}</p>
+            <p class="text-xxs text-pg-text-xs mt-0.5">Contact{{ total_contacts|pluralize:"s" }} enregistré{{ total_contacts|pluralize:"s" }}</p>
+        </div>
+        <div class="bg-pg-surface border border-pg-border rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+                <div class="w-7 h-7 rounded-lg bg-pastel-violet flex items-center justify-center">
+                    <i data-lucide="file-text" class="w-3.5 h-3.5 text-pastel-violet-t" stroke-width="1.5"></i>
+                </div>
+            </div>
+            <p class="text-xl font-bold text-pg-text">{{ total_bulletins }}</p>
+            <p class="text-xxs text-pg-text-xs mt-0.5">Document{{ total_bulletins|pluralize:"s" }} généré{{ total_bulletins|pluralize:"s" }}</p>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- GRILLE PRINCIPALE (2/3 profs + 1/3 documents)              -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- ──────────────────────────────────────────── -->
+        <!-- COLONNE GAUCHE : Répertoire des professeurs  -->
+        <!-- ──────────────────────────────────────────── -->
+        <div class="lg:col-span-2 space-y-4">
+
+            <!-- Bouton + formulaire ajout professeur -->
+            <div class="bg-pg-surface border border-pg-border rounded-xl p-5" x-data="{ showForm: false }">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-md bg-pastel-peach flex items-center justify-center">
+                            <i data-lucide="user-plus" class="w-3.5 h-3.5 text-pastel-peach-t" stroke-width="1.5"></i>
+                        </div>
+                        <h2 class="text-sm font-semibold text-pg-text">Répertoire des professeurs</h2>
+                    </div>
+                    <button @click="showForm = !showForm"
+                        class="inline-flex items-center gap-1 text-xs text-pg-accent hover:text-pg-accent-h font-medium px-2 py-1 rounded-md hover:bg-pg-hover">
+                        <i data-lucide="plus" class="w-3.5 h-3.5" stroke-width="1.5"></i>
+                        Nouveau professeur
+                    </button>
+                </div>
+
+                <div x-show="showForm" x-transition class="mt-4 p-4 bg-pg-bg rounded-lg border border-pg-border">
+                    <form action="{% url 'contacts:add_professor' %}" method="POST" class="space-y-3">
+                        {% csrf_token %}
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-pg-text-s mb-1">Prénom *</label>
+                                <input type="text" name="first_name" required placeholder="Jean"
+                                       class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-pg-text-s mb-1">Nom *</label>
+                                <input type="text" name="last_name" required placeholder="Dupont"
+                                       class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-pg-text-s mb-1">Email</label>
+                                <input type="email" name="email" placeholder="jean.dupont@isep.fr"
+                                       class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-pg-text-s mb-1">Matières enseignées</label>
+                                <input type="text" name="subjects" placeholder="Python, Statistiques"
+                                       class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-medium text-pg-text-s mb-1">Bureau</label>
+                                <input type="text" name="office_number" placeholder="B204"
+                                       class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-pg-text-s mb-1">Horaires de permanence</label>
+                                <input type="text" name="office_hours" placeholder="Lundi 14h-16h"
+                                       class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                            </div>
+                        </div>
+                        <div class="flex justify-end">
+                            <button type="submit" class="px-4 py-2 text-xs text-white bg-pg-accent hover:bg-pg-accent-h rounded-lg font-medium">
+                                Ajouter
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Liste des professeurs (accordéon) -->
+            {% for item in professors_data %}
+            <div class="bg-pg-surface border border-pg-border rounded-xl overflow-hidden"
+                 x-data="{ open: false, showNote: false, showLog: false, showEdit: false }">
+
+                <!-- En-tête professeur (cliquable) -->
+                <div @click="open = !open" class="flex items-center justify-between p-5 cursor-pointer hover:bg-pg-hover">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-pastel-peach flex items-center justify-center shrink-0">
+                            <span class="text-sm font-semibold text-pastel-peach-t">
+                                {{ item.professor.first_name.0 }}{{ item.professor.last_name.0 }}
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-semibold text-pg-text">{{ item.professor.full_name }}</h3>
+                            <p class="text-xxs text-pg-text-xs">
+                                {% if item.professor.subjects %}{{ item.professor.subjects }}{% else %}Aucune matière renseignée{% endif %}
+                                · {{ item.note_count }} note{{ item.note_count|pluralize:"s" }}
+                                · {{ item.log_count }} contact{{ item.log_count|pluralize:"s" }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        {% if item.professor.has_email %}
+                        <a href="{{ item.professor.mailto_link }}" @click.stop
+                           class="inline-flex items-center gap-1.5 text-xs text-white bg-pg-accent hover:bg-pg-accent-h rounded-lg px-3 py-1.5 font-medium">
+                            <i data-lucide="mail" class="w-3 h-3" stroke-width="1.5"></i>
+                            Email
+                        </a>
+                        {% endif %}
+                        <i data-lucide="chevron-down" class="w-4 h-4 text-pg-text-xs transition-transform"
+                           :class="open ? 'rotate-180' : ''" stroke-width="1.5"></i>
+                    </div>
+                </div>
+
+                <!-- Contenu déplié -->
+                <div x-show="open" x-transition class="border-t border-pg-border">
+
+                    <!-- Infos du professeur -->
+                    <div class="px-5 py-4 bg-pg-bg/50 border-b border-pg-border">
+                        <div class="grid grid-cols-2 gap-4 text-xs">
+                            <div class="flex items-start gap-2">
+                                <i data-lucide="mail" class="w-3.5 h-3.5 text-pg-text-xs mt-0.5 shrink-0" stroke-width="1.5"></i>
+                                <div>
+                                    <p class="text-pg-text-xs font-medium">Email</p>
+                                    {% if item.professor.email %}
+                                    <a href="{{ item.professor.mailto_link }}" class="text-pg-accent hover:underline">{{ item.professor.email }}</a>
+                                    {% else %}
+                                    <p class="text-pg-text-s">Non renseigné</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <i data-lucide="book-open" class="w-3.5 h-3.5 text-pg-text-xs mt-0.5 shrink-0" stroke-width="1.5"></i>
+                                <div>
+                                    <p class="text-pg-text-xs font-medium">Matières</p>
+                                    <p class="text-pg-text">{{ item.professor.subjects|default:"Non renseigné" }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <i data-lucide="door-open" class="w-3.5 h-3.5 text-pg-text-xs mt-0.5 shrink-0" stroke-width="1.5"></i>
+                                <div>
+                                    <p class="text-pg-text-xs font-medium">Bureau</p>
+                                    <p class="text-pg-text">{{ item.professor.office_number|default:"Non renseigné" }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start gap-2">
+                                <i data-lucide="clock" class="w-3.5 h-3.5 text-pg-text-xs mt-0.5 shrink-0" stroke-width="1.5"></i>
+                                <div>
+                                    <p class="text-pg-text-xs font-medium">Permanence</p>
+                                    <p class="text-pg-text">{{ item.professor.office_hours|default:"Non renseigné" }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Barre d'actions -->
+                    <div class="flex items-center gap-2 px-5 py-3 bg-pg-bg border-b border-pg-border">
+                        <button @click="showNote = !showNote"
+                            class="inline-flex items-center gap-1 text-xs text-pastel-yellow-t font-medium px-2 py-1 rounded-md hover:bg-pastel-yellow/50">
+                            <i data-lucide="sticky-note" class="w-3 h-3" stroke-width="1.5"></i>
+                            Ajouter une note
+                        </button>
+                        <button @click="showLog = !showLog"
+                            class="inline-flex items-center gap-1 text-xs text-pastel-blue-t font-medium px-2 py-1 rounded-md hover:bg-pastel-blue/50">
+                            <i data-lucide="message-square-plus" class="w-3 h-3" stroke-width="1.5"></i>
+                            Enregistrer un contact
+                        </button>
+                        <button @click="showEdit = !showEdit"
+                            class="inline-flex items-center gap-1 text-xs text-pg-text-s font-medium px-2 py-1 rounded-md hover:bg-pg-hover">
+                            <i data-lucide="pencil" class="w-3 h-3" stroke-width="1.5"></i>
+                            Modifier
+                        </button>
+                        <div class="flex-1"></div>
+                        <form action="{% url 'contacts:delete_professor' item.professor.id %}" method="POST" class="inline"
+                              onsubmit="return confirm('Supprimer ce professeur et toutes ses données ?')">
+                            {% csrf_token %}
+                            <button type="submit" class="inline-flex items-center gap-1 text-xs text-pg-text-xs hover:text-pastel-rose-t font-medium px-2 py-1 rounded-md hover:bg-pastel-rose">
+                                <i data-lucide="trash-2" class="w-3 h-3" stroke-width="1.5"></i>
+                                Supprimer
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Formulaire ajout note -->
+                    <div x-show="showNote" x-transition class="px-5 py-4 bg-pastel-yellow/10 border-b border-pg-border">
+                        <form action="{% url 'contacts:add_note' item.professor.id %}" method="POST" class="flex items-end gap-3">
+                            {% csrf_token %}
+                            <div class="flex-1">
+                                <label class="block text-xs font-medium text-pastel-yellow-t mb-1">Note personnelle</label>
+                                <input type="text" name="content" required placeholder="Ex : Aime les questions en fin de cours"
+                                       class="w-full text-sm border border-pastel-yellow rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pastel-yellow-t focus:border-pastel-yellow-t">
+                            </div>
+                            <button type="submit" class="px-4 py-2 text-xs text-white bg-pastel-yellow-t hover:opacity-90 rounded-lg font-medium shrink-0">
+                                Ajouter
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Formulaire ajout contact -->
+                    <div x-show="showLog" x-transition class="px-5 py-4 bg-pastel-blue/10 border-b border-pg-border">
+                        <form action="{% url 'contacts:add_contact_log' item.professor.id %}" method="POST" class="space-y-3">
+                            {% csrf_token %}
+                            <div class="grid grid-cols-3 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-pastel-blue-t mb-1">Type</label>
+                                    <select name="contact_type"
+                                            class="w-full text-sm border border-pastel-blue rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pastel-blue-t focus:border-pastel-blue-t">
+                                        {% for code, label in contact_types %}
+                                        <option value="{{ code }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-pastel-blue-t mb-1">Sujet *</label>
+                                    <input type="text" name="subject" required placeholder="Question sur le projet"
+                                           class="w-full text-sm border border-pastel-blue rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pastel-blue-t focus:border-pastel-blue-t">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-pastel-blue-t mb-1">Date *</label>
+                                    <input type="date" name="contact_date" required
+                                           class="w-full text-sm border border-pastel-blue rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pastel-blue-t focus:border-pastel-blue-t">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-medium text-pastel-blue-t mb-1">Détails (optionnel)</label>
+                                <input type="text" name="description" placeholder="Détails supplémentaires..."
+                                       class="w-full text-sm border border-pastel-blue rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pastel-blue-t focus:border-pastel-blue-t">
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="submit" class="px-4 py-2 text-xs text-white bg-pastel-blue-t hover:opacity-90 rounded-lg font-medium">
+                                    Enregistrer
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Formulaire modification professeur -->
+                    <div x-show="showEdit" x-transition class="px-5 py-4 bg-pg-bg border-b border-pg-border">
+                        <form action="{% url 'contacts:update_professor' item.professor.id %}" method="POST" class="space-y-3">
+                            {% csrf_token %}
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-pg-text-s mb-1">Prénom</label>
+                                    <input type="text" name="first_name" value="{{ item.professor.first_name }}" required
+                                           class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-pg-text-s mb-1">Nom</label>
+                                    <input type="text" name="last_name" value="{{ item.professor.last_name }}" required
+                                           class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-pg-text-s mb-1">Email</label>
+                                    <input type="email" name="email" value="{{ item.professor.email }}"
+                                           class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-pg-text-s mb-1">Matières</label>
+                                    <input type="text" name="subjects" value="{{ item.professor.subjects }}"
+                                           class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-pg-text-s mb-1">Bureau</label>
+                                    <input type="text" name="office_number" value="{{ item.professor.office_number }}"
+                                           class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-pg-text-s mb-1">Horaires de permanence</label>
+                                    <input type="text" name="office_hours" value="{{ item.professor.office_hours }}"
+                                           class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                                </div>
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="submit" class="px-4 py-2 text-xs text-white bg-pg-accent hover:bg-pg-accent-h rounded-lg font-medium">
+                                    Mettre à jour
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Notes personnelles -->
+                    {% if item.notes %}
+                    <div class="px-5 py-3 border-b border-pg-border">
+                        <p class="text-xxs text-pg-text-xs mb-2 font-medium uppercase tracking-wider">Notes personnelles</p>
+                        <div class="space-y-2">
+                            {% for note in item.notes %}
+                            <div class="flex items-start justify-between gap-2 group">
+                                <div class="flex items-start gap-2 min-w-0">
+                                    <i data-lucide="sticky-note" class="w-3 h-3 text-pastel-yellow-t mt-0.5 shrink-0" stroke-width="1.5"></i>
+                                    <div class="min-w-0">
+                                        <p class="text-xs text-pg-text">{{ note.content }}</p>
+                                        <p class="text-xxs text-pg-text-xs">{{ note.created_at|date:"d/m/Y" }}</p>
+                                    </div>
+                                </div>
+                                <form action="{% url 'contacts:delete_note' note.id %}" method="POST" class="inline shrink-0">
+                                    {% csrf_token %}
+                                    <button type="submit" class="p-1 rounded text-pg-text-xs opacity-0 group-hover:opacity-100 hover:text-pastel-rose-t hover:bg-pastel-rose" title="Supprimer">
+                                        <i data-lucide="x" class="w-3 h-3" stroke-width="1.5"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Historique des contacts -->
+                    {% if item.logs %}
+                    <div class="px-5 py-3">
+                        <p class="text-xxs text-pg-text-xs mb-2 font-medium uppercase tracking-wider">Historique des contacts</p>
+                        <div class="space-y-2">
+                            {% for log in item.logs %}
+                            <div class="flex items-start justify-between gap-2 group">
+                                <div class="flex items-start gap-2 min-w-0">
+                                    <span class="text-xxs px-1.5 py-0.5 rounded {{ log.color_classes.bg }} {{ log.color_classes.text }} shrink-0 mt-0.5">
+                                        {{ log.get_contact_type_display }}
+                                    </span>
+                                    <div class="min-w-0">
+                                        <p class="text-xs text-pg-text font-medium">{{ log.subject }}</p>
+                                        {% if log.description %}
+                                        <p class="text-xxs text-pg-text-s">{{ log.description }}</p>
+                                        {% endif %}
+                                        <p class="text-xxs text-pg-text-xs">{{ log.contact_date|date:"d/m/Y" }}</p>
+                                    </div>
+                                </div>
+                                <form action="{% url 'contacts:delete_contact_log' log.id %}" method="POST" class="inline shrink-0">
+                                    {% csrf_token %}
+                                    <button type="submit" class="p-1 rounded text-pg-text-xs opacity-0 group-hover:opacity-100 hover:text-pastel-rose-t hover:bg-pastel-rose" title="Supprimer">
+                                        <i data-lucide="x" class="w-3 h-3" stroke-width="1.5"></i>
+                                    </button>
+                                </form>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Message si vide -->
+                    {% if not item.notes and not item.logs %}
+                    <div class="px-5 py-6 text-center">
+                        <p class="text-sm text-pg-text-s">Aucune note ni contact. Utilise les boutons ci-dessus pour commencer.</p>
+                    </div>
+                    {% endif %}
+
+                </div>
+            </div>
+            {% endfor %}
+
+            {% if not professors_data %}
+            <div class="text-center py-12">
+                <i data-lucide="users" class="w-10 h-10 text-pg-text-xs mx-auto mb-3" stroke-width="1.25"></i>
+                <p class="text-sm text-pg-text-s">Aucun professeur ajouté. Commence par en ajouter un !</p>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- ──────────────────────────────────────────── -->
+        <!-- COLONNE DROITE : Documents & Bulletins       -->
+        <!-- ──────────────────────────────────────────── -->
+        <div class="space-y-4">
+
+            <!-- Générer un bulletin -->
+            <div class="bg-pg-surface border border-pg-border rounded-xl p-5" x-data="{ showBulletin: false }">
+                <div class="flex items-center gap-2 mb-3">
+                    <div class="w-6 h-6 rounded-md bg-pastel-violet flex items-center justify-center">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5 text-pastel-violet-t" stroke-width="1.5"></i>
+                    </div>
+                    <h2 class="text-sm font-semibold text-pg-text">Bulletin de notes</h2>
+                </div>
+                <p class="text-xxs text-pg-text-s mb-3">
+                    Génère un bulletin PDF avec toutes tes matières, notes et moyennes.
+                    Le document porte la mention "Document provisoire".
+                </p>
+                <button @click="showBulletin = !showBulletin"
+                    class="w-full inline-flex items-center justify-center gap-1.5 text-xs text-white bg-pastel-violet-t hover:opacity-90 rounded-lg px-3 py-2 font-medium">
+                    <i data-lucide="file-plus" class="w-3.5 h-3.5" stroke-width="1.5"></i>
+                    Générer un bulletin
+                </button>
+                <div x-show="showBulletin" x-transition class="mt-3 p-3 bg-pg-bg rounded-lg border border-pg-border">
+                    <form action="{% url 'contacts:generate_bulletin' %}" method="POST" class="space-y-3">
+                        {% csrf_token %}
+                        <div>
+                            <label class="block text-xs font-medium text-pg-text-s mb-1">Semestre</label>
+                            <select name="semester"
+                                    class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                                {% for code, label in semester_choices %}
+                                <option value="{{ code }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-pg-text-s mb-1">Année universitaire</label>
+                            <input type="text" name="academic_year" value="2025-2026" required
+                                   class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                        </div>
+                        <button type="submit" class="w-full px-3 py-2 text-xs text-white bg-pastel-violet-t hover:opacity-90 rounded-lg font-medium">
+                            Générer le PDF
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Exporter les statistiques -->
+            <div class="bg-pg-surface border border-pg-border rounded-xl p-5" x-data="{ showStats: false }">
+                <div class="flex items-center gap-2 mb-3">
+                    <div class="w-6 h-6 rounded-md bg-pastel-mint flex items-center justify-center">
+                        <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-pastel-mint-t" stroke-width="1.5"></i>
+                    </div>
+                    <h2 class="text-sm font-semibold text-pg-text">Export statistiques</h2>
+                </div>
+                <p class="text-xxs text-pg-text-s mb-3">
+                    Exporte tes statistiques académiques en PDF : moyennes, objectifs, matières en difficulté.
+                </p>
+                <button @click="showStats = !showStats"
+                    class="w-full inline-flex items-center justify-center gap-1.5 text-xs text-white bg-pastel-mint-t hover:opacity-90 rounded-lg px-3 py-2 font-medium">
+                    <i data-lucide="download" class="w-3.5 h-3.5" stroke-width="1.5"></i>
+                    Exporter les stats
+                </button>
+                <div x-show="showStats" x-transition class="mt-3 p-3 bg-pg-bg rounded-lg border border-pg-border">
+                    <form action="{% url 'contacts:generate_stats' %}" method="POST" class="space-y-3">
+                        {% csrf_token %}
+                        <div>
+                            <label class="block text-xs font-medium text-pg-text-s mb-1">Semestre</label>
+                            <select name="semester"
+                                    class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                                {% for code, label in semester_choices %}
+                                <option value="{{ code }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-pg-text-s mb-1">Année universitaire</label>
+                            <input type="text" name="academic_year" value="2025-2026" required
+                                   class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                        </div>
+                        <button type="submit" class="w-full px-3 py-2 text-xs text-white bg-pastel-mint-t hover:opacity-90 rounded-lg font-medium">
+                            Générer le PDF
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Historique des documents générés -->
+            <div class="bg-pg-surface border border-pg-border rounded-xl p-5">
+                <div class="flex items-center gap-2 mb-3">
+                    <div class="w-6 h-6 rounded-md bg-pastel-blue flex items-center justify-center">
+                        <i data-lucide="history" class="w-3.5 h-3.5 text-pastel-blue-t" stroke-width="1.5"></i>
+                    </div>
+                    <h2 class="text-sm font-semibold text-pg-text">Historique des documents</h2>
+                </div>
+
+                {% if bulletins %}
+                <div class="space-y-2">
+                    {% for bulletin in bulletins %}
+                    <div class="flex items-center justify-between p-3 rounded-lg bg-pg-bg border border-pg-border group">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-7 h-7 rounded-md flex items-center justify-center shrink-0
+                                {% if bulletin.document_type == 'BULLETIN' %}bg-pastel-violet{% else %}bg-pastel-mint{% endif %}">
+                                <i data-lucide="{% if bulletin.document_type == 'BULLETIN' %}file-text{% else %}bar-chart-3{% endif %}"
+                                   class="w-3.5 h-3.5 {% if bulletin.document_type == 'BULLETIN' %}text-pastel-violet-t{% else %}text-pastel-mint-t{% endif %}" stroke-width="1.5"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-xs font-medium text-pg-text truncate">{{ bulletin.get_document_type_display }}</p>
+                                <p class="text-xxs text-pg-text-xs">
+                                    {{ bulletin.get_semester_display }} {{ bulletin.academic_year }}
+                                    {% if bulletin.general_average %}· Moy. {{ bulletin.general_average }}{% endif %}
+                                </p>
+                                <p class="text-xxs text-pg-text-xs">{{ bulletin.created_at|date:"d/m/Y H:i" }}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <a href="{% url 'contacts:download_bulletin' bulletin.id %}"
+                               class="p-1.5 rounded text-pg-accent hover:bg-pg-hover" title="Télécharger">
+                                <i data-lucide="download" class="w-3.5 h-3.5" stroke-width="1.5"></i>
+                            </a>
+                            <form action="{% url 'contacts:delete_bulletin' bulletin.id %}" method="POST" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="p-1.5 rounded text-pg-text-xs opacity-0 group-hover:opacity-100 hover:text-pastel-rose-t hover:bg-pastel-rose" title="Supprimer">
+                                    <i data-lucide="trash-2" class="w-3.5 h-3.5" stroke-width="1.5"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-xs text-pg-text-s text-center py-4">Aucun document généré pour le moment.</p>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+
+    {% endif %}
+</div>
+{% endblock %}
+
+<!-- MutationObserver Lucide géré globalement dans base.html -->

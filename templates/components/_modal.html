@@ -1,0 +1,47 @@
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MODAL - Modale réutilisable style Notion                       -->
+<!-- Utilisation avec Alpine.js :                                    -->
+<!--   x-data="{ open: false }" sur le parent                      -->
+<!--   @click="open = true" sur le déclencheur                     -->
+<!-- Paramètres : slot via {% block %} pour le contenu              -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<!-- Overlay -->
+<div
+    x-show="open"
+    x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    @click="open = false"
+    class="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm"
+></div>
+
+<!-- Contenu de la modale -->
+<div
+    x-show="open"
+    x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="opacity-0 scale-95 translate-y-2"
+    x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+    x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+    x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+    @click.away="open = false"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+>
+    <div class="bg-white rounded-xl shadow-xl border border-pg-border w-full max-w-md pointer-events-auto" @click.stop>
+        <!-- Header -->
+        <div class="flex items-center justify-between px-5 py-4 border-b border-pg-border">
+            <h3 class="text-base font-semibold text-pg-text">{{ modal_title }}</h3>
+            <button @click="open = false" class="p-1 rounded-md text-pg-text-s hover:bg-pg-hover hover:text-pg-text">
+                <i data-lucide="x" class="w-4 h-4" stroke-width="1.5"></i>
+            </button>
+        </div>
+        <!-- Body (slot) -->
+        <div class="px-5 py-4">
+            {{ modal_body }}
+        </div>
+    </div>
+</div>

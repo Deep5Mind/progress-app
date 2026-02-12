@@ -1,0 +1,171 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr" class="h-full {% if user_theme == 'dark' %}dark{% endif %}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}PROGRESS{% endblock %}</title>
+
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        // Palette PROGRESS - Pastels doux & variés
+                        'pg': {
+                            'bg':       'var(--pg-bg)',
+                            'surface':  'var(--pg-surface)',
+                            'sidebar':  'var(--pg-sidebar)',
+                            'border':   'var(--pg-border)',
+                            'hover':    'var(--pg-hover)',
+                            'accent':   'var(--pg-accent)',
+                            'accent-h': 'var(--pg-accent-h)',
+                            'text':     'var(--pg-text)',
+                            'text-s':   'var(--pg-text-s)',
+                            'text-xs':  'var(--pg-text-xs)',
+                        },
+                        // ── Pastels doux ──
+                        'pastel': {
+                            'green':    '#C8E6C9',
+                            'green-t':  '#4A7C59',
+                            'pink':     '#F8D7DA',
+                            'pink-t':   '#A25568',
+                            'yellow':   '#FFF3CD',
+                            'yellow-t': '#8B7355',
+                            'violet':   '#E8DAEF',
+                            'violet-t': '#7B5EA7',
+                            'blue':     '#D4E6F1',
+                            'blue-t':   '#5B7FA5',
+                            'peach':    '#FDEBD0',
+                            'peach-t':  '#B07D56',
+                            'mint':     '#D5F5E3',
+                            'mint-t':   '#2E7D5B',
+                            'rose':     '#FADBD8',
+                            'rose-t':   '#C0392B',
+                        }
+                    },
+                    fontFamily: {
+                        'sans': ['{{ user_font|default:"Inter" }}', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    fontSize: {
+                        'xxs': '0.6875rem',  // 11px
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Dynamic CSS variables for theme -->
+    <style>
+        :root {
+            --pg-bg:       #F9F7F4;
+            --pg-surface:  #FFFFFF;
+            --pg-sidebar:  #FBFAF8;
+            --pg-border:   #E8E5E0;
+            --pg-hover:    #F1EEEA;
+            --pg-accent:   {{ user_accent|default:"#6B8F71" }};
+            --pg-accent-h: {{ user_accent_h|default:"#5A7D60" }};
+            --pg-text:     #37352F;
+            --pg-text-s:   #787774;
+            --pg-text-xs:  #B4B4B0;
+        }
+
+        html.dark {
+            --pg-bg:       #191919;
+            --pg-surface:  #252525;
+            --pg-sidebar:  #1E1E1E;
+            --pg-border:   #363636;
+            --pg-hover:    #2F2F2F;
+            --pg-accent:   {{ user_accent|default:"#6B8F71" }};
+            --pg-accent-h: {{ user_accent_h|default:"#5A7D60" }};
+            --pg-text:     #E8E5E0;
+            --pg-text-s:   #9B9A97;
+            --pg-text-xs:  #5A5A5A;
+        }
+    </style>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@300;400;500;600;700&family=Nunito:wght@300;400;500;600;700&family=Lora:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Lucide Icons (CDN) -->
+    <script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+
+    <!-- Alpine.js (CDN) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.9/dist/cdn.min.js"></script>
+
+    <!-- Chart.js (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+    <!-- Styles custom -->
+    <style>
+        /* ── Scrollbar style Notion ── */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #E0DFDC; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #C4C4C0; }
+
+        html.dark ::-webkit-scrollbar-thumb { background: #444; }
+        html.dark ::-webkit-scrollbar-thumb:hover { background: #555; }
+
+        /* ── Transitions douces ── */
+        * { transition-property: background-color, border-color, color, opacity, box-shadow;
+            transition-duration: 150ms;
+            transition-timing-function: ease; }
+
+        /* ── Focus style ── */
+        *:focus-visible { outline: 2px solid var(--pg-accent); outline-offset: 1px; border-radius: 4px; }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body class="h-full bg-pg-bg font-sans text-pg-text antialiased" x-data="{ sidebarOpen: true }">
+
+    <div class="flex h-full">
+
+        <!-- ════════════════════════════════════════════════════════ -->
+        <!-- SIDEBAR - Navigation style Notion                      -->
+        <!-- ════════════════════════════════════════════════════════ -->
+        {% include 'components/_sidebar.html' %}
+
+        <!-- ════════════════════════════════════════════════════════ -->
+        <!-- CONTENU PRINCIPAL                                      -->
+        <!-- ════════════════════════════════════════════════════════ -->
+        <main class="flex-1 overflow-y-auto" :class="sidebarOpen ? 'ml-60' : 'ml-0'">
+
+            <!-- Top bar minimaliste -->
+            {% include 'components/_topbar.html' %}
+
+            <!-- Zone de contenu -->
+            <div class="max-w-5xl mx-auto px-8 py-8">
+                {% block content %}{% endblock %}
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- TOAST NOTIFICATIONS                                    -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    {% include 'components/_toast.html' %}
+
+    <!-- Initialiser les icônes Lucide -->
+    <script>
+        lucide.createIcons();
+        // Vérifier périodiquement s'il y a de nouvelles icônes à créer
+        // (après qu'Alpine.js révèle du contenu caché avec x-show)
+        setInterval(() => {
+            if (document.querySelector('i[data-lucide]')) {
+                lucide.createIcons();
+            }
+        }, 500);
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

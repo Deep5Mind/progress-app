@@ -1,0 +1,21 @@
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- PROGRESS BAR - Barre de progression réutilisable               -->
+<!-- Paramètres via {% include %} :                                  -->
+<!--   label    : texte affiché (ex: "Statistiques")                -->
+<!--   value    : pourcentage de remplissage (0-100)                -->
+<!--   subtitle : texte secondaire (ex: "12/20 → objectif 15")     -->
+<!--   color    : classe Tailwind bg (défaut: bg-pg-accent)         -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<div class="group">
+    <div class="flex items-center justify-between mb-1.5">
+        <span class="text-sm font-medium text-pg-text">{{ label }}</span>
+        <span class="text-xs text-pg-text-s">{{ subtitle }}</span>
+    </div>
+    <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+        <div
+            class="h-full rounded-full transition-all duration-700 ease-out {{ color|default:'bg-pg-accent' }}"
+            style="width: {{ value|default:0 }}%"
+        ></div>
+    </div>
+</div>

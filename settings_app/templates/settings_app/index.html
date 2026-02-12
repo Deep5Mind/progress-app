@@ -1,0 +1,642 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}PROGRESS - Paramètres{% endblock %}
+
+{% block content %}
+<div x-data="{ activeTab: 'appearance' }">
+
+    <!-- En-tête -->
+    <div class="mb-8">
+        <h1 class="text-2xl font-bold text-pg-text">Paramètres</h1>
+        <p class="text-sm text-pg-text-s mt-1">Personnalise ton espace PROGRESS</p>
+    </div>
+
+    <!-- Tabs de navigation -->
+    <div class="flex gap-1 mb-8 border-b border-pg-border pb-px overflow-x-auto">
+        <button @click="activeTab = 'appearance'"
+                :class="activeTab === 'appearance' ? 'border-b-2 border-pg-accent text-pg-text font-medium' : 'text-pg-text-s hover:text-pg-text'"
+                class="px-4 py-2 text-sm transition-colors -mb-px whitespace-nowrap">
+            Apparence
+        </button>
+        <button @click="activeTab = 'profile'"
+                :class="activeTab === 'profile' ? 'border-b-2 border-pg-accent text-pg-text font-medium' : 'text-pg-text-s hover:text-pg-text'"
+                class="px-4 py-2 text-sm transition-colors -mb-px whitespace-nowrap">
+            Profil
+        </button>
+        <button @click="activeTab = 'security'"
+                :class="activeTab === 'security' ? 'border-b-2 border-pg-accent text-pg-text font-medium' : 'text-pg-text-s hover:text-pg-text'"
+                class="px-4 py-2 text-sm transition-colors -mb-px whitespace-nowrap">
+            Sécurité
+        </button>
+        <button @click="activeTab = 'data'"
+                :class="activeTab === 'data' ? 'border-b-2 border-pg-accent text-pg-text font-medium' : 'text-pg-text-s hover:text-pg-text'"
+                class="px-4 py-2 text-sm transition-colors -mb-px whitespace-nowrap">
+            Données
+        </button>
+        <button @click="activeTab = 'about'"
+                :class="activeTab === 'about' ? 'border-b-2 border-pg-accent text-pg-text font-medium' : 'text-pg-text-s hover:text-pg-text'"
+                class="px-4 py-2 text-sm transition-colors -mb-px whitespace-nowrap">
+            À propos
+        </button>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TAB : Apparence                            -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div x-show="activeTab === 'appearance'" x-transition class="space-y-8">
+
+        <!-- Thème clair/sombre avec Toggle Switch -->
+        <div class="bg-pg-surface rounded-xl border border-pg-border p-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-xl bg-pastel-violet flex items-center justify-center">
+                        <i data-lucide="{% if prefs.theme == 'dark' %}moon{% else %}sun{% endif %}" class="w-5 h-5 text-pastel-violet-t" stroke-width="1.5"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base font-semibold text-pg-text">Mode {{ prefs.get_theme_display }}</h2>
+                        <p class="text-sm text-pg-text-s">Basculer entre le mode clair et le mode sombre</p>
+                    </div>
+                </div>
+
+                <!-- Toggle Switch -->
+                <form method="post" action="{% url 'settings:update_theme' %}" id="themeForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="theme" value="{% if prefs.theme == 'light' %}dark{% else %}light{% endif %}">
+                    <button type="submit"
+                            class="relative inline-flex h-7 w-14 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-pg-accent/30 focus:ring-offset-2
+                                   {% if prefs.theme == 'dark' %}bg-pg-accent{% else %}bg-gray-300{% endif %}"
+                            role="switch"
+                            aria-checked="{% if prefs.theme == 'dark' %}true{% else %}false{% endif %}">
+                        <span class="sr-only">Activer le mode sombre</span>
+                        <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-sm transition-transform duration-300
+                                     {% if prefs.theme == 'dark' %}translate-x-8{% else %}translate-x-1{% endif %}">
+                            {% if prefs.theme == 'dark' %}
+                            <i data-lucide="moon" class="w-3 h-3 text-pg-accent" stroke-width="2"></i>
+                            {% else %}
+                            <i data-lucide="sun" class="w-3 h-3 text-amber-500" stroke-width="2"></i>
+                            {% endif %}
+                        </span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Aperçu rapide des deux modes -->
+            <div class="grid grid-cols-2 gap-3 mt-5 max-w-sm">
+                <div class="p-3 rounded-lg border-2 {% if prefs.theme == 'light' %}border-pg-accent bg-pg-accent/5{% else %}border-pg-border{% endif %}">
+                    <div class="w-full h-8 rounded bg-[#F9F7F4] border border-[#E8E5E0] mb-2"></div>
+                    <span class="text-xs text-pg-text-s">Clair</span>
+                </div>
+                <div class="p-3 rounded-lg border-2 {% if prefs.theme == 'dark' %}border-pg-accent bg-pg-accent/5{% else %}border-pg-border{% endif %}">
+                    <div class="w-full h-8 rounded bg-[#191919] border border-[#363636] mb-2"></div>
+                    <span class="text-xs text-pg-text-s">Sombre</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Police -->
+        <div class="bg-pg-surface rounded-xl border border-pg-border p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-pastel-blue flex items-center justify-center">
+                    <i data-lucide="type" class="w-5 h-5 text-pastel-blue-t" stroke-width="1.5"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-semibold text-pg-text">Police de caractères</h2>
+                    <p class="text-sm text-pg-text-s">Choisis la typographie qui te convient</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-xl">
+                {% for code, label in font_choices %}
+                <form method="post" action="{% url 'settings:update_font' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="font" value="{{ code }}">
+                    <button type="submit"
+                            class="w-full p-3 rounded-xl border-2 text-center transition-all
+                                   {% if prefs.font == code %}
+                                       border-pg-accent bg-pg-accent/5
+                                   {% else %}
+                                       border-pg-border hover:border-pg-text-xs
+                                   {% endif %}">
+                        <span class="text-lg block mb-1" style="font-family: '{{ code }}', sans-serif;">Aa</span>
+                        <span class="text-xs text-pg-text-s">{{ label }}</span>
+                        {% if prefs.font == code %}
+                        <span class="block text-xs text-pg-accent font-medium mt-1">Actif</span>
+                        {% endif %}
+                    </button>
+                </form>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Couleur d'accent -->
+        <div class="bg-pg-surface rounded-xl border border-pg-border p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-pastel-peach flex items-center justify-center">
+                    <i data-lucide="palette" class="w-5 h-5 text-pastel-peach-t" stroke-width="1.5"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-semibold text-pg-text">Couleur d'accent</h2>
+                    <p class="text-sm text-pg-text-s">Personnalise la couleur principale de l'interface</p>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-3">
+                {% for code, label in accent_choices %}
+                <form method="post" action="{% url 'settings:update_accent' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="accent_color" value="{{ code }}">
+                    <button type="submit"
+                            class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border-2 transition-all
+                                   {% if prefs.accent_color == code %}
+                                       border-pg-accent bg-pg-accent/5
+                                   {% else %}
+                                       border-pg-border hover:border-pg-text-xs
+                                   {% endif %}">
+                        <div class="w-5 h-5 rounded-full shadow-sm"
+                             style="background-color: {% if code == 'sage' %}#6B8F71{% elif code == 'ocean' %}#5B7FA5{% elif code == 'lavender' %}#7B5EA7{% elif code == 'peach' %}#B07D56{% elif code == 'rose' %}#A25568{% endif %};"></div>
+                        <span class="text-sm text-pg-text">{{ label }}</span>
+                    </button>
+                </form>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Citation motivante -->
+        <div class="bg-pg-surface rounded-xl border border-pg-border p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-pastel-yellow flex items-center justify-center">
+                    <i data-lucide="quote" class="w-5 h-5 text-pastel-yellow-t" stroke-width="1.5"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-semibold text-pg-text">Citation motivante</h2>
+                    <p class="text-sm text-pg-text-s">Ta phrase personnelle affichée sur le tableau de bord</p>
+                </div>
+            </div>
+
+            <form method="post" action="{% url 'dashboard:update_quote' %}" class="space-y-3 max-w-lg">
+                {% csrf_token %}
+                <div>
+                    <input type="text" name="quote" value="{{ prefs.motivational_quote }}"
+                           placeholder="Écris ta citation motivante ici..."
+                           class="w-full px-3 py-2.5 rounded-lg border border-pg-border bg-pg-bg text-sm text-pg-text
+                                  focus:outline-none focus:ring-2 focus:ring-pg-accent/20 focus:border-pg-accent">
+                    <p class="text-xs text-pg-text-xs mt-1.5">Laisse vide pour afficher une citation aléatoire à chaque visite</p>
+                </div>
+                <button type="submit"
+                        class="px-5 py-2 bg-pg-accent hover:bg-pg-accent-h text-white text-sm font-medium rounded-lg transition-colors">
+                    Enregistrer la citation
+                </button>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TAB : Profil                               -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div x-show="activeTab === 'profile'" x-transition class="space-y-8">
+
+        <!-- Avatar & résumé -->
+        <div class="bg-pg-surface rounded-xl border border-pg-border p-6">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 rounded-2xl bg-pg-accent flex items-center justify-center">
+                    <span class="text-white font-bold text-xl">
+                        {{ user.first_name|make_list|first|default:"?" }}{{ user.last_name|make_list|first|default:"" }}
+                    </span>
+                </div>
+                <div>
+                    <h2 class="text-lg font-semibold text-pg-text">{{ user.first_name }} {{ user.last_name }}</h2>
+                    <p class="text-sm text-pg-text-s">@{{ user.username }} · {% if user.student %}{{ user.student.get_level_display }}{% endif %}</p>
+                    <p class="text-xs text-pg-text-xs">Membre depuis {{ user.date_joined|date:"F Y" }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-pg-surface rounded-xl border border-pg-border p-6">
+            <h2 class="text-base font-semibold text-pg-text mb-1">Informations du profil</h2>
+            <p class="text-sm text-pg-text-s mb-4">Modifie tes informations personnelles</p>
+
+            <form method="post" action="{% url 'settings:update_profile' %}" class="space-y-4 max-w-md">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-pg-text mb-1">Prénom</label>
+                        <input type="text" name="first_name" value="{{ user.first_name }}"
+                               class="w-full px-3 py-2 rounded-lg border border-pg-border bg-pg-bg text-sm text-pg-text
+                                      focus:outline-none focus:ring-2 focus:ring-pg-accent/20 focus:border-pg-accent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-pg-text mb-1">Nom</label>
+                        <input type="text" name="last_name" value="{{ user.last_name }}"
+                               class="w-full px-3 py-2 rounded-lg border border-pg-border bg-pg-bg text-sm text-pg-text
+                                      focus:outline-none focus:ring-2 focus:ring-pg-accent/20 focus:border-pg-accent">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-pg-text mb-1">Email</label>
+                    <input type="email" name="email" value="{{ user.email }}"
+                           class="w-full px-3 py-2 rounded-lg border border-pg-border bg-pg-bg text-sm text-pg-text
+                                  focus:outline-none focus:ring-2 focus:ring-pg-accent/20 focus:border-pg-accent">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-pg-text mb-1">Nom d'utilisateur</label>
+                    <input type="text" value="{{ user.username }}" disabled
+                           class="w-full px-3 py-2 rounded-lg border border-pg-border bg-pg-hover text-sm text-pg-text-s cursor-not-allowed">
+                    <p class="text-xs text-pg-text-xs mt-1">Le nom d'utilisateur ne peut pas être modifié</p>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-pg-text mb-1">Niveau d'études</label>
+                    <select name="level"
+                            class="w-full px-3 py-2 rounded-lg border border-pg-border bg-pg-bg text-sm text-pg-text
+                                   focus:outline-none focus:ring-2 focus:ring-pg-accent/20 focus:border-pg-accent">
+                        <option value="L1" {% if user.student.level == 'L1' %}selected{% endif %}>Licence 1</option>
+                        <option value="L2" {% if user.student.level == 'L2' %}selected{% endif %}>Licence 2</option>
+                        <option value="L3" {% if user.student.level == 'L3' %}selected{% endif %}>Licence 3</option>
+                        <option value="M1" {% if user.student.level == 'M1' %}selected{% endif %}>Master 1</option>
+                        <option value="M2" {% if user.student.level == 'M2' %}selected{% endif %}>Master 2</option>
+                    </select>
+                </div>
+
+                <button type="submit"
+                        class="px-6 py-2 bg-pg-accent hover:bg-pg-accent-h text-white text-sm font-medium
+                               rounded-lg transition-colors">
+                    Enregistrer
+                </button>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TAB : Sécurité                             -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div x-show="activeTab === 'security'" x-transition class="space-y-8">
+
+        <div class="bg-pg-surface rounded-xl border border-pg-border p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-pastel-rose flex items-center justify-center">
+                    <i data-lucide="lock" class="w-5 h-5 text-pastel-rose-t" stroke-width="1.5"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-semibold text-pg-text">Changer le mot de passe</h2>
+                    <p class="text-sm text-pg-text-s">Assure-toi d'utiliser un mot de passe fort</p>
+                </div>
+            </div>
+
+            <form method="post" action="{% url 'settings:change_password' %}" class="space-y-4 max-w-md">
+                {% csrf_token %}
+
+                <div>
+                    <label class="block text-sm font-medium text-pg-text mb-1">Mot de passe actuel</label>
+                    <input type="password" name="current_password" required
+                           class="w-full px-3 py-2 rounded-lg border border-pg-border bg-pg-bg text-sm text-pg-text
+                                  focus:outline-none focus:ring-2 focus:ring-pg-accent/20 focus:border-pg-accent">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-pg-text mb-1">Nouveau mot de passe</label>
+                    <input type="password" name="new_password1" required
+                           placeholder="8 caractères minimum"
+                           class="w-full px-3 py-2 rounded-lg border border-pg-border bg-pg-bg text-sm text-pg-text
+                                  focus:outline-none focus:ring-2 focus:ring-pg-accent/20 focus:border-pg-accent">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-pg-text mb-1">Confirmer le nouveau mot de passe</label>
+                    <input type="password" name="new_password2" required
+                           class="w-full px-3 py-2 rounded-lg border border-pg-border bg-pg-bg text-sm text-pg-text
+                                  focus:outline-none focus:ring-2 focus:ring-pg-accent/20 focus:border-pg-accent">
+                </div>
+
+                <button type="submit"
+                        class="px-6 py-2 bg-pg-accent hover:bg-pg-accent-h text-white text-sm font-medium
+                               rounded-lg transition-colors">
+                    Changer le mot de passe
+                </button>
+            </form>
+        </div>
+
+        <!-- Session info -->
+        <div class="bg-pg-surface rounded-xl border border-pg-border p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-pastel-mint flex items-center justify-center">
+                    <i data-lucide="shield-check" class="w-5 h-5 text-pastel-mint-t" stroke-width="1.5"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-semibold text-pg-text">Session active</h2>
+                    <p class="text-sm text-pg-text-s">Informations sur ta connexion actuelle</p>
+                </div>
+            </div>
+
+            <div class="space-y-2 text-sm max-w-md">
+                <div class="flex items-center justify-between py-2 border-b border-pg-border">
+                    <span class="text-pg-text-s">Connecté en tant que</span>
+                    <span class="font-medium text-pg-text">@{{ user.username }}</span>
+                </div>
+                <div class="flex items-center justify-between py-2 border-b border-pg-border">
+                    <span class="text-pg-text-s">Dernière connexion</span>
+                    <span class="font-medium text-pg-text">{{ user.last_login|date:"d/m/Y à H:i" }}</span>
+                </div>
+                <div class="flex items-center justify-between py-2">
+                    <span class="text-pg-text-s">Compte créé le</span>
+                    <span class="font-medium text-pg-text">{{ user.date_joined|date:"d/m/Y" }}</span>
+                </div>
+            </div>
+
+            <div class="mt-5">
+                <a href="{% url 'accounts:logout' %}"
+                   class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-pastel-rose-t bg-pastel-rose rounded-lg hover:bg-pastel-pink transition-colors">
+                    <i data-lucide="log-out" class="w-4 h-4" stroke-width="1.5"></i>
+                    Se déconnecter
+                </a>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TAB : Données                              -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div x-show="activeTab === 'data'" x-transition class="space-y-8">
+
+        <!-- Résumé des données -->
+        <div class="bg-pg-surface rounded-xl border border-pg-border p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-pastel-blue flex items-center justify-center">
+                    <i data-lucide="database" class="w-5 h-5 text-pastel-blue-t" stroke-width="1.5"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-semibold text-pg-text">Tes données</h2>
+                    <p class="text-sm text-pg-text-s">Vue d'ensemble de tes données dans PROGRESS</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-xl">
+                <div class="p-3 bg-pg-bg rounded-lg text-center">
+                    <p class="text-lg font-bold text-pg-text">{{ stats.courses }}</p>
+                    <p class="text-xs text-pg-text-s">Matières</p>
+                </div>
+                <div class="p-3 bg-pg-bg rounded-lg text-center">
+                    <p class="text-lg font-bold text-pg-text">{{ stats.grades }}</p>
+                    <p class="text-xs text-pg-text-s">Notes</p>
+                </div>
+                <div class="p-3 bg-pg-bg rounded-lg text-center">
+                    <p class="text-lg font-bold text-pg-text">{{ stats.events }}</p>
+                    <p class="text-xs text-pg-text-s">Événements</p>
+                </div>
+                <div class="p-3 bg-pg-bg rounded-lg text-center">
+                    <p class="text-lg font-bold text-pg-text">{{ stats.professors }}</p>
+                    <p class="text-xs text-pg-text-s">Professeurs</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Exporter les données -->
+        <div class="bg-pg-surface rounded-xl border border-pg-border p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-pastel-green flex items-center justify-center">
+                    <i data-lucide="download" class="w-5 h-5 text-pastel-green-t" stroke-width="1.5"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-semibold text-pg-text">Exporter tes données</h2>
+                    <p class="text-sm text-pg-text-s">Télécharge une copie de tes données</p>
+                </div>
+            </div>
+
+            <div class="space-y-3 max-w-md">
+                <form method="post" action="{% url 'settings:export_data' %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="w-full flex items-center gap-3 p-3 rounded-lg border border-pg-border hover:bg-pg-hover transition-colors text-left">
+                        <i data-lucide="file-json" class="w-5 h-5 text-pg-accent" stroke-width="1.5"></i>
+                        <div>
+                            <p class="text-sm font-medium text-pg-text">Exporter en JSON</p>
+                            <p class="text-xs text-pg-text-s">Matières, notes, objectifs, événements, contacts</p>
+                        </div>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Réinitialiser les préférences -->
+        <div class="bg-pg-surface rounded-xl border border-pg-border p-6">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-pastel-yellow flex items-center justify-center">
+                    <i data-lucide="rotate-ccw" class="w-5 h-5 text-pastel-yellow-t" stroke-width="1.5"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-semibold text-pg-text">Réinitialiser les préférences</h2>
+                    <p class="text-sm text-pg-text-s">Remettre les paramètres d'apparence par défaut</p>
+                </div>
+            </div>
+
+            <form method="post" action="{% url 'settings:reset_preferences' %}" class="max-w-md"
+                  onsubmit="return confirm('Remettre le thème, la police et la couleur par défaut ?')">
+                {% csrf_token %}
+                <button type="submit"
+                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-pastel-yellow-t bg-pastel-yellow rounded-lg hover:bg-amber-200 transition-colors">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4" stroke-width="1.5"></i>
+                    Réinitialiser l'apparence
+                </button>
+            </form>
+        </div>
+
+        <!-- Zone dangereuse -->
+        <div class="bg-pg-surface rounded-xl border border-pastel-rose p-6" x-data="{ confirmDelete: false }">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 rounded-xl bg-pastel-rose flex items-center justify-center">
+                    <i data-lucide="alert-triangle" class="w-5 h-5 text-pastel-rose-t" stroke-width="1.5"></i>
+                </div>
+                <div>
+                    <h2 class="text-base font-semibold text-pastel-rose-t">Zone dangereuse</h2>
+                    <p class="text-sm text-pg-text-s">Suppression irréversible de toutes tes données académiques</p>
+                </div>
+            </div>
+
+            <div class="max-w-md">
+                <button @click="confirmDelete = !confirmDelete"
+                        class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-pastel-rose-t bg-pastel-rose rounded-lg hover:bg-pastel-pink transition-colors">
+                    <i data-lucide="trash-2" class="w-4 h-4" stroke-width="1.5"></i>
+                    Supprimer toutes mes données
+                </button>
+
+                <div x-show="confirmDelete" x-transition class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p class="text-sm text-red-800 mb-3">
+                        Cette action supprimera toutes tes matières, notes, événements, contacts et objectifs.
+                        Ton compte utilisateur sera conservé.
+                    </p>
+                    <form method="post" action="{% url 'settings:delete_all_data' %}">
+                        {% csrf_token %}
+                        <div class="flex gap-2">
+                            <button type="submit"
+                                    class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors">
+                                Confirmer la suppression
+                            </button>
+                            <button type="button" @click="confirmDelete = false"
+                                    class="px-4 py-2 text-sm text-pg-text-s hover:text-pg-text rounded-lg hover:bg-pg-hover">
+                                Annuler
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- TAB : À propos                             -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div x-show="activeTab === 'about'" x-transition class="space-y-6">
+
+        <!-- Info app -->
+        <div class="bg-pg-surface rounded-xl border border-pg-border p-6">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-14 h-14 bg-pg-accent rounded-2xl flex items-center justify-center shadow-lg">
+                    <span class="text-white font-bold text-2xl">P</span>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-pg-text">PROGRESS</h2>
+                    <p class="text-sm text-pg-text-s">Espace Étudiant Cozy &mdash; v1.0</p>
+                </div>
+            </div>
+            <p class="text-sm text-pg-text-s leading-relaxed">
+                PROGRESS est une application web conçue pour aider les étudiants à gérer
+                leur parcours académique de manière organisée et agréable. Elle permet le
+                suivi des notes avec calcul automatique des moyennes pondérées, la gestion
+                du calendrier, le répertoire des professeurs, la prédiction de performances
+                et la génération de documents PDF (bulletins et statistiques).
+            </p>
+        </div>
+
+        <!-- Développeurs -->
+        <div class="bg-pg-surface rounded-xl border border-pg-border p-6">
+            <h2 class="text-base font-semibold text-pg-text mb-4">Équipe de développement</h2>
+            <div class="space-y-3">
+                <div class="flex items-center gap-3 p-3 bg-pastel-green/30 rounded-lg">
+                    <div class="w-9 h-9 rounded-full bg-pastel-green flex items-center justify-center">
+                        <span class="text-pastel-green-t font-semibold text-sm">LN</span>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-pg-text">Leslye Nkwa</p>
+                        <p class="text-xs text-pg-text-s">Développeuse</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 bg-pastel-violet/30 rounded-lg">
+                    <div class="w-9 h-9 rounded-full bg-pastel-violet flex items-center justify-center">
+                        <span class="text-pastel-violet-t font-semibold text-sm">MD</span>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-pg-text">Marème Diop</p>
+                        <p class="text-xs text-pg-text-s">Développeuse</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 p-3 bg-pastel-blue/30 rounded-lg">
+                    <div class="w-9 h-9 rounded-full bg-pastel-blue flex items-center justify-center">
+                        <span class="text-pastel-blue-t font-semibold text-sm">TR</span>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-pg-text">Trésor Riradjim</p>
+                        <p class="text-xs text-pg-text-s">Développeur</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cadre académique -->
+        <div class="bg-pg-surface rounded-xl border border-pg-border p-6">
+            <h2 class="text-base font-semibold text-pg-text mb-3">Cadre académique</h2>
+            <div class="space-y-2 text-sm text-pg-text-s">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="graduation-cap" class="w-4 h-4 shrink-0" stroke-width="1.5"></i>
+                    <span><strong class="text-pg-text">Filière :</strong> ISE1 CL (Ingénieur Statisticien Économiste)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="building-2" class="w-4 h-4 shrink-0" stroke-width="1.5"></i>
+                    <span><strong class="text-pg-text">École :</strong> ENSAE de Dakar (École Nationale de la Statistique et de l'Analyse Économique Pierre Ndiaye)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="book-open" class="w-4 h-4 shrink-0" stroke-width="1.5"></i>
+                    <span><strong class="text-pg-text">Cours :</strong> Algorithme et Programmation avec Python avancé</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <i data-lucide="calendar" class="w-4 h-4 shrink-0" stroke-width="1.5"></i>
+                    <span><strong class="text-pg-text">Année académique :</strong> 2025 - 2026</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technologies -->
+        <div class="bg-pg-surface rounded-xl border border-pg-border p-6">
+            <h2 class="text-base font-semibold text-pg-text mb-3">Technologies utilisées</h2>
+            <div class="flex flex-wrap gap-2">
+                <span class="px-3 py-1 rounded-full bg-pastel-green/40 text-pastel-green-t text-xs font-medium">Python 3.10+</span>
+                <span class="px-3 py-1 rounded-full bg-pastel-green/40 text-pastel-green-t text-xs font-medium">Django 4</span>
+                <span class="px-3 py-1 rounded-full bg-pastel-blue/40 text-pastel-blue-t text-xs font-medium">Tailwind CSS</span>
+                <span class="px-3 py-1 rounded-full bg-pastel-blue/40 text-pastel-blue-t text-xs font-medium">Alpine.js</span>
+                <span class="px-3 py-1 rounded-full bg-pastel-violet/40 text-pastel-violet-t text-xs font-medium">Chart.js</span>
+                <span class="px-3 py-1 rounded-full bg-pastel-violet/40 text-pastel-violet-t text-xs font-medium">ReportLab</span>
+                <span class="px-3 py-1 rounded-full bg-pastel-peach/40 text-pastel-peach-t text-xs font-medium">SQLite</span>
+                <span class="px-3 py-1 rounded-full bg-pastel-peach/40 text-pastel-peach-t text-xs font-medium">Lucide Icons</span>
+            </div>
+        </div>
+
+        <!-- Fonctionnalités -->
+        <div class="bg-pg-surface rounded-xl border border-pg-border p-6">
+            <h2 class="text-base font-semibold text-pg-text mb-3">Fonctionnalités principales</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div class="flex items-start gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4 text-pastel-green-t shrink-0 mt-0.5" stroke-width="1.5"></i>
+                    <span class="text-pg-text-s">Suivi des notes avec moyennes pondérées</span>
+                </div>
+                <div class="flex items-start gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4 text-pastel-green-t shrink-0 mt-0.5" stroke-width="1.5"></i>
+                    <span class="text-pg-text-s">Prédictions et simulations de notes</span>
+                </div>
+                <div class="flex items-start gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4 text-pastel-green-t shrink-0 mt-0.5" stroke-width="1.5"></i>
+                    <span class="text-pg-text-s">Objectifs académiques avec progression</span>
+                </div>
+                <div class="flex items-start gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4 text-pastel-green-t shrink-0 mt-0.5" stroke-width="1.5"></i>
+                    <span class="text-pg-text-s">Calendrier avec rappels d'événements</span>
+                </div>
+                <div class="flex items-start gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4 text-pastel-green-t shrink-0 mt-0.5" stroke-width="1.5"></i>
+                    <span class="text-pg-text-s">Répertoire de professeurs avec notes</span>
+                </div>
+                <div class="flex items-start gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4 text-pastel-green-t shrink-0 mt-0.5" stroke-width="1.5"></i>
+                    <span class="text-pg-text-s">Génération de bulletins et statistiques PDF</span>
+                </div>
+                <div class="flex items-start gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4 text-pastel-green-t shrink-0 mt-0.5" stroke-width="1.5"></i>
+                    <span class="text-pg-text-s">Thème clair/sombre personnalisable</span>
+                </div>
+                <div class="flex items-start gap-2">
+                    <i data-lucide="check-circle" class="w-4 h-4 text-pastel-green-t shrink-0 mt-0.5" stroke-width="1.5"></i>
+                    <span class="text-pg-text-s">Graphiques d'évolution et de comparaison</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Licence -->
+        <div class="bg-pg-surface rounded-xl border border-pg-border p-6">
+            <h2 class="text-base font-semibold text-pg-text mb-2">Licence & Remerciements</h2>
+            <p class="text-sm text-pg-text-s leading-relaxed">
+                Projet réalisé dans le cadre du cours d'Algorithme et Programmation avec Python avancé
+                à l'ENSAE de Dakar (année 2025-2026). Cette application est un projet académique
+                à but éducatif.
+            </p>
+            <p class="text-xs text-pg-text-xs mt-3">PROGRESS v1.0 &mdash; Fait avec soin par l'équipe PROGRESS</p>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

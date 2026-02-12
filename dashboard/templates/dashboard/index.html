@@ -1,0 +1,480 @@
+{% extends 'base.html' %}
+
+{% block title %}PROGRESS - Tableau de bord{% endblock %}
+{% block page_title %}Tableau de bord{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    {% if not student %}
+    <!-- ═══════ État vide ═══════ -->
+    <div class="text-center py-16">
+        <i data-lucide="user-plus" class="w-12 h-12 text-pg-text-xs mx-auto mb-4" stroke-width="1.25"></i>
+        <h2 class="text-lg font-medium text-pg-text mb-1">Aucun profil étudiant</h2>
+        <p class="text-sm text-pg-text-s">Créez un profil via l'admin pour commencer.</p>
+    </div>
+    {% else %}
+
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- SECTION 1 : En-tête de bienvenue + Citation                -->
+    <!-- Icône Lucide "home" flottante au lieu d'emoji               -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div class="flex items-start gap-4" x-data="{ editingQuote: false }">
+        <div class="w-10 h-10 rounded-xl bg-pastel-violet flex items-center justify-center shrink-0 mt-1">
+            <i data-lucide="home" class="w-5 h-5 text-pastel-violet-t" stroke-width="1.5"></i>
+        </div>
+        <div class="flex-1">
+            <h1 class="text-3xl font-bold text-pg-text">Bonjour, {{ student.first_name }}</h1>
+
+            <!-- Citation affichée (cliquable pour éditer) -->
+            <div x-show="!editingQuote" class="mt-1.5">
+                <div class="flex items-center gap-2">
+                    <p class="text-pg-text-s italic text-sm">« {{ quote }} »</p>
+                    <button @click="editingQuote = true"
+                            class="p-1.5 rounded-lg hover:bg-pg-hover text-pg-text-xs hover:text-pg-accent transition-colors"
+                            title="Modifier ta citation">
+                        <i data-lucide="pencil" class="w-3.5 h-3.5" stroke-width="1.5"></i>
+                    </button>
+                </div>
+                {% if not prefs_has_quote %}
+                <p class="text-xxs text-pg-text-xs mt-0.5">
+                    Citation aléatoire &mdash;
+                    <button @click="editingQuote = true" class="text-pg-accent hover:underline">Personnaliser</button>
+                </p>
+                {% endif %}
+            </div>
+
+            <!-- Formulaire d'édition de la citation -->
+            <div x-show="editingQuote" x-transition class="mt-2">
+                <form action="{% url 'dashboard:update_quote' %}" method="POST" class="flex items-center gap-2">
+                    {% csrf_token %}
+                    <input type="text" name="quote" value="{{ user_quote }}"
+                           placeholder="Écris ta propre citation motivante..."
+                           class="flex-1 text-sm border border-pg-border rounded-lg px-3 py-1.5 bg-pg-surface text-pg-text
+                                  focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                    <button type="submit"
+                            class="px-3 py-1.5 text-xs text-white bg-pg-accent hover:bg-pg-accent-h rounded-lg font-medium">
+                        OK
+                    </button>
+                    <button type="button" @click="editingQuote = false"
+                            class="px-2 py-1.5 text-xs text-pg-text-s hover:text-pg-text rounded-lg hover:bg-pg-hover">
+                        Annuler
+                    </button>
+                </form>
+                <p class="text-xxs text-pg-text-xs mt-1">Laisse vide pour afficher une citation aléatoire à chaque visite</p>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- SECTION 2 : Cartes statistiques (pastels variés)           -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
+        <!-- Carte : Moyenne générale — Vert menthe -->
+        <div class="bg-pg-surface border border-pg-border rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+                <div class="w-8 h-8 rounded-lg bg-pastel-green flex items-center justify-center">
+                    <i data-lucide="bar-chart-3" class="w-4 h-4 text-pastel-green-t" stroke-width="1.5"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-bold text-pg-text">
+                {% if general_average %}{{ general_average }}<span class="text-sm font-normal text-pg-text-s">/20</span>
+                {% else %}<span class="text-pg-text-xs">—</span>{% endif %}
+            </p>
+            <p class="text-xs text-pg-text-s mt-1">Moyenne générale</p>
+        </div>
+
+        <!-- Carte : Objectif — Violet lavande -->
+        <div class="bg-pg-surface border border-pg-border rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+                <div class="w-8 h-8 rounded-lg bg-pastel-violet flex items-center justify-center">
+                    <i data-lucide="target" class="w-4 h-4 text-pastel-violet-t" stroke-width="1.5"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-bold text-pg-text">
+                {% if general_goal %}{{ general_goal.target_average }}<span class="text-sm font-normal text-pg-text-s">/20</span>
+                {% else %}<span class="text-pg-text-xs">—</span>{% endif %}
+            </p>
+            <p class="text-xs text-pg-text-s mt-1">Objectif visé</p>
+        </div>
+
+        <!-- Carte : Matières — Rose poudré -->
+        <div class="bg-pg-surface border border-pg-border rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+                <div class="w-8 h-8 rounded-lg bg-pastel-pink flex items-center justify-center">
+                    <i data-lucide="book-open" class="w-4 h-4 text-pastel-pink-t" stroke-width="1.5"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-bold text-pg-text">{{ total_courses }}</p>
+            <p class="text-xs text-pg-text-s mt-1">Matières</p>
+        </div>
+
+        <!-- Carte : Notes saisies — Jaune vanille -->
+        <div class="bg-pg-surface border border-pg-border rounded-xl p-5">
+            <div class="flex items-center gap-2 mb-3">
+                <div class="w-8 h-8 rounded-lg bg-pastel-yellow flex items-center justify-center">
+                    <i data-lucide="file-text" class="w-4 h-4 text-pastel-yellow-t" stroke-width="1.5"></i>
+                </div>
+            </div>
+            <p class="text-2xl font-bold text-pg-text">{{ total_grades }}</p>
+            <p class="text-xs text-pg-text-s mt-1">Notes saisies</p>
+        </div>
+    </div>
+
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- SECTION 3 : Grille principale (2 colonnes)                 -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+        <!-- ──────────────────────────────────────────────────── -->
+        <!-- COLONNE GAUCHE (2/3) : Progression & Objectifs      -->
+        <!-- ──────────────────────────────────────────────────── -->
+        <div class="lg:col-span-2 space-y-6">
+
+            <!-- ── Bloc : Objectif général + barre ── -->
+            {% if general_goal %}
+            <div class="bg-pg-surface border border-pg-border rounded-xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-md bg-pastel-mint flex items-center justify-center">
+                            <i data-lucide="target" class="w-3.5 h-3.5 text-pastel-mint-t" stroke-width="1.5"></i>
+                        </div>
+                        <h2 class="text-sm font-semibold text-pg-text">Objectif général</h2>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        {% if general_gap != None %}
+                            {% if general_gap >= 0 %}
+                            <span class="inline-flex items-center gap-1 text-xs font-medium text-pastel-green-t bg-pastel-green px-2 py-0.5 rounded-full">
+                                <i data-lucide="trending-up" class="w-3 h-3" stroke-width="1.5"></i>
+                                +{{ general_gap }}
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center gap-1 text-xs font-medium text-pastel-rose-t bg-pastel-rose px-2 py-0.5 rounded-full">
+                                <i data-lucide="trending-down" class="w-3 h-3" stroke-width="1.5"></i>
+                                {{ general_gap }}
+                            </span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- Barre de progression générale -->
+                <div class="mb-2">
+                    <div class="flex justify-between text-xs text-pg-text-s mb-1.5">
+                        <span>{{ general_average|default:"—" }}/20</span>
+                        <span>Objectif : {{ general_goal.target_average }}/20</span>
+                    </div>
+                    <div class="w-full h-3 bg-gray-100 rounded-full overflow-hidden">
+                        <div class="h-full rounded-full bg-pg-accent transition-all duration-700 ease-out" style="width: {{ general_progress }}%"></div>
+                    </div>
+                    <p class="text-xs text-pg-text-xs mt-1.5 text-right">{{ general_progress }}%</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ── Bloc : Progression par matière ── -->
+            <div class="bg-pg-surface border border-pg-border rounded-xl p-5">
+                <div class="flex items-center justify-between mb-5">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-md bg-pastel-blue flex items-center justify-center">
+                            <i data-lucide="trending-up" class="w-3.5 h-3.5 text-pastel-blue-t" stroke-width="1.5"></i>
+                        </div>
+                        <h2 class="text-sm font-semibold text-pg-text">Progression par matière</h2>
+                    </div>
+                    <a href="{% url 'grades:index' %}" class="text-xs text-pg-accent hover:text-pg-accent-h font-medium">
+                        Voir les notes
+                    </a>
+                </div>
+
+                {% if courses_data %}
+                <div class="space-y-5">
+                    {% for item in courses_data %}
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <div class="flex items-center gap-2">
+                                <!-- Pastilles de couleur alternées par matière -->
+                                <div class="w-2 h-2 rounded-full
+                                    {% cycle 'bg-pastel-violet-t' 'bg-pastel-blue-t' 'bg-pastel-pink-t' 'bg-pastel-green-t' 'bg-pastel-yellow-t' 'bg-pastel-peach-t' %}
+                                "></div>
+                                <span class="text-sm font-medium text-pg-text">{{ item.course.name }}</span>
+                                <span class="text-xxs text-pg-text-xs bg-gray-50 px-1.5 py-0.5 rounded">coeff. {{ item.course.coefficient }}</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm font-semibold text-pg-text">
+                                    {% if item.average %}{{ item.average }}/20{% else %}—{% endif %}
+                                </span>
+                                {% if item.gap != None %}
+                                    {% if item.gap >= 0 %}
+                                    <span class="text-xxs text-pastel-green-t font-medium bg-pastel-green px-1.5 py-0.5 rounded-full">+{{ item.gap }}</span>
+                                    {% else %}
+                                    <span class="text-xxs text-pastel-pink-t font-medium bg-pastel-pink px-1.5 py-0.5 rounded-full">{{ item.gap }}</span>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        <!-- Barre avec couleurs pastel alternées -->
+                        <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                            {% if item.goal %}
+                            <div class="h-full rounded-full transition-all duration-700 ease-out
+                                {% if item.gap != None and item.gap >= 0 %}bg-pastel-green-t/70
+                                {% elif item.progress >= 80 %}bg-pastel-blue-t/70
+                                {% elif item.progress >= 50 %}bg-pastel-yellow-t/70
+                                {% else %}bg-pastel-pink-t/70{% endif %}"
+                                style="width: {{ item.progress }}%"></div>
+                            {% elif item.average %}
+                            <div class="h-full rounded-full bg-pastel-violet-t/50 transition-all duration-700 ease-out"
+                                style="width: {% widthratio item.average 20 100 %}%"></div>
+                            {% endif %}
+                        </div>
+                        <!-- Mini stats -->
+                        <div class="flex gap-3 mt-1">
+                            <span class="text-xxs text-pg-text-xs">{{ item.grade_count }} note{{ item.grade_count|pluralize:"s" }}</span>
+                            {% if item.highest %}
+                            <span class="text-xxs text-pg-text-xs">Max : {{ item.highest }}</span>
+                            {% endif %}
+                            {% if item.lowest %}
+                            <span class="text-xxs text-pg-text-xs">Min : {{ item.lowest }}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-6">
+                    <p class="text-sm text-pg-text-s">Aucune matière ajoutée.</p>
+                    <a href="{% url 'grades:index' %}" class="text-sm text-pg-accent hover:text-pg-accent-h mt-1 inline-block">Ajouter une matière</a>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- ── Bloc : Objectifs par matière ── -->
+            <div class="bg-pg-surface border border-pg-border rounded-xl p-5" x-data="{ showGoalForm: false }">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-md bg-pastel-peach flex items-center justify-center">
+                            <i data-lucide="flag" class="w-3.5 h-3.5 text-pastel-peach-t" stroke-width="1.5"></i>
+                        </div>
+                        <h2 class="text-sm font-semibold text-pg-text">Mes objectifs</h2>
+                    </div>
+                    <button @click="showGoalForm = !showGoalForm"
+                        class="inline-flex items-center gap-1 text-xs text-pg-accent hover:text-pg-accent-h font-medium px-2 py-1 rounded-md hover:bg-pg-hover">
+                        <i data-lucide="plus" class="w-3.5 h-3.5" stroke-width="1.5"></i>
+                        Ajouter
+                    </button>
+                </div>
+
+                <!-- Formulaire d'ajout (toggle Alpine) -->
+                <div x-show="showGoalForm" x-transition class="mb-5 p-4 bg-pg-bg rounded-lg border border-pg-border">
+                    <form action="{% url 'dashboard:add_goal' %}" method="POST" class="space-y-3">
+                        {% csrf_token %}
+                        <div>
+                            <label class="block text-xs font-medium text-pg-text-s mb-1">Matière (vide = objectif général)</label>
+                            <select name="course_id" class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                                <option value="">Objectif général</option>
+                                {% for item in courses_data %}
+                                <option value="{{ item.course.id }}">{{ item.course.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-pg-text-s mb-1">Moyenne visée (/20)</label>
+                            <input type="number" name="target_average" step="0.5" min="0" max="20" value="14"
+                                   class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-pg-text-s mb-1">Semestre</label>
+                            <input type="text" name="semester" placeholder="Ex: S1 2024-2025"
+                                   class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                        </div>
+                        <div class="flex justify-end gap-2">
+                            <button type="button" @click="showGoalForm = false"
+                                class="px-3 py-1.5 text-xs text-pg-text-s hover:text-pg-text rounded-lg hover:bg-pg-hover">
+                                Annuler
+                            </button>
+                            <button type="submit"
+                                class="px-3 py-1.5 text-xs text-white bg-pg-accent hover:bg-pg-accent-h rounded-lg font-medium">
+                                Enregistrer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Liste des objectifs -->
+                {% for item in courses_data %}
+                    {% if item.goal %}
+                    <div class="flex items-center justify-between py-2.5 {% if not forloop.last %}border-b border-pg-border{% endif %}">
+                        <div class="flex items-center gap-3">
+                            <div class="w-2 h-2 rounded-full {% if item.gap != None and item.gap >= 0 %}bg-pastel-green-t{% elif item.progress >= 80 %}bg-pastel-blue-t{% else %}bg-pastel-pink-t{% endif %}"></div>
+                            <div>
+                                <p class="text-sm text-pg-text">{{ item.course.name }}</p>
+                                <p class="text-xxs text-pg-text-xs">Objectif : {{ item.goal.target_average }}/20 · Actuel : {% if item.average %}{{ item.average }}{% else %}—{% endif %}/20</p>
+                            </div>
+                        </div>
+                        <form action="{% url 'dashboard:delete_goal' item.goal.id %}" method="POST" class="inline">
+                            {% csrf_token %}
+                            <button type="submit" class="p-1 rounded text-pg-text-xs hover:text-pastel-rose-t hover:bg-pastel-rose" title="Supprimer">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5" stroke-width="1.5"></i>
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+
+                {% if general_goal %}
+                <div class="flex items-center justify-between py-2.5 border-t border-pg-border mt-2">
+                    <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full {% if general_gap != None and general_gap >= 0 %}bg-pastel-green-t{% else %}bg-pastel-violet-t{% endif %}"></div>
+                        <div>
+                            <p class="text-sm text-pg-text font-medium">Objectif général</p>
+                            <p class="text-xxs text-pg-text-xs">Objectif : {{ general_goal.target_average }}/20 · Actuel : {% if general_average %}{{ general_average }}{% else %}—{% endif %}/20</p>
+                        </div>
+                    </div>
+                    <form action="{% url 'dashboard:delete_goal' general_goal.id %}" method="POST" class="inline">
+                        {% csrf_token %}
+                        <button type="submit" class="p-1 rounded text-pg-text-xs hover:text-pastel-rose-t hover:bg-pastel-rose" title="Supprimer">
+                            <i data-lucide="trash-2" class="w-3.5 h-3.5" stroke-width="1.5"></i>
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+
+        <!-- ──────────────────────────────────────────────────── -->
+        <!-- COLONNE DROITE (1/3) : Semaine + Rappels            -->
+        <!-- ──────────────────────────────────────────────────── -->
+        <div class="space-y-6">
+
+            <!-- ── Rappels urgents — Rose tendre ── -->
+            {% if reminders %}
+            <div class="bg-pastel-rose border border-pastel-pink rounded-xl p-4">
+                <div class="flex items-center gap-2 mb-3">
+                    <i data-lucide="bell-ring" class="w-4 h-4 text-pastel-rose-t" stroke-width="1.5"></i>
+                    <h3 class="text-sm font-semibold text-pastel-pink-t">Rappels</h3>
+                </div>
+                <div class="space-y-2">
+                    {% for event in reminders %}
+                    <div class="flex items-start gap-2">
+                        <div class="w-1.5 h-1.5 rounded-full bg-pastel-pink-t mt-1.5 shrink-0"></div>
+                        <div>
+                            <p class="text-sm text-pastel-pink-t font-medium">{{ event.title }}</p>
+                            <p class="text-xxs text-pastel-pink-t/70">{{ event.start_date|date:"l d F" }}{% if event.start_time %} · {{ event.start_time|time:"H:i" }}{% endif %}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- ── Cette semaine — Bleu ciel ── -->
+            <div class="bg-pg-surface border border-pg-border rounded-xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-6 h-6 rounded-md bg-pastel-blue flex items-center justify-center">
+                            <i data-lucide="calendar-days" class="w-3.5 h-3.5 text-pastel-blue-t" stroke-width="1.5"></i>
+                        </div>
+                        <h3 class="text-sm font-semibold text-pg-text">Cette semaine</h3>
+                    </div>
+                    <a href="{% url 'calendar:index' %}" class="text-xs text-pg-accent hover:text-pg-accent-h font-medium">
+                        Voir tout
+                    </a>
+                </div>
+
+                {% if upcoming_events %}
+                <div class="space-y-2.5">
+                    {% for event in upcoming_events %}
+                    <div class="flex items-start gap-3 p-2.5 rounded-lg hover:bg-pg-hover group">
+                        <!-- Point de couleur -->
+                        <div class="w-2 h-2 rounded-full mt-1.5 shrink-0 {{ event.color_classes.dot }}"></div>
+                        <div class="flex-1 min-w-0">
+                            <p class="text-sm text-pg-text {% if event.is_completed %}line-through text-pg-text-xs{% endif %}">
+                                {{ event.title }}
+                            </p>
+                            <div class="flex items-center gap-1.5 mt-0.5">
+                                {% if event.is_today %}
+                                <span class="text-xxs font-medium text-pg-accent">Aujourd'hui</span>
+                                {% else %}
+                                <span class="text-xxs text-pg-text-xs">{{ event.start_date|date:"D d" }}</span>
+                                {% endif %}
+                                {% if event.start_time %}
+                                <span class="text-xxs text-pg-text-xs">· {{ event.start_time|time:"H:i" }}</span>
+                                {% endif %}
+                                {% if event.is_all_day %}
+                                <span class="text-xxs text-pg-text-xs">· Toute la journée</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <!-- Badge type -->
+                        <span class="text-xxs {{ event.color_classes.text }} {{ event.color_classes.bg }} px-1.5 py-0.5 rounded shrink-0">
+                            {{ event.get_event_type_display }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-6">
+                    <i data-lucide="calendar-check" class="w-8 h-8 text-pg-text-xs mx-auto mb-2" stroke-width="1.25"></i>
+                    <p class="text-sm text-pg-text-s">Aucun événement cette semaine</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- ── En un coup d'oeil — Jaune vanille ── -->
+            <div class="bg-pg-surface border border-pg-border rounded-xl p-5">
+                <div class="flex items-center gap-2 mb-4">
+                    <div class="w-6 h-6 rounded-md bg-pastel-yellow flex items-center justify-center">
+                        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-pastel-yellow-t" stroke-width="1.5"></i>
+                    </div>
+                    <h3 class="text-sm font-semibold text-pg-text">En un coup d'oeil</h3>
+                </div>
+                <div class="space-y-3">
+                    <!-- Meilleure matière -->
+                    {% with best=courses_data|dictsort:"average"|last %}
+                    {% if best.average %}
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-pg-text-s">Meilleure matière</span>
+                        <span class="text-xs font-medium text-pastel-green-t">{{ best.course.name }} ({{ best.average }})</span>
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+
+                    <!-- Matière à renforcer -->
+                    {% with worst=courses_data|dictsort:"average"|first %}
+                    {% if worst.average %}
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-pg-text-s">À renforcer</span>
+                        <span class="text-xs font-medium text-pastel-pink-t">{{ worst.course.name }} ({{ worst.average }})</span>
+                    </div>
+                    {% endif %}
+                    {% endwith %}
+
+                    <!-- Écart à l'objectif -->
+                    {% if general_gap != None %}
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-pg-text-s">Écart à l'objectif</span>
+                        <span class="text-xs font-medium {% if general_gap >= 0 %}text-pastel-green-t{% else %}text-pastel-pink-t{% endif %}">
+                            {% if general_gap >= 0 %}+{% endif %}{{ general_gap }} points
+                        </span>
+                    </div>
+                    {% endif %}
+
+                    <!-- Niveau -->
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-pg-text-s">Niveau</span>
+                        <span class="text-xs font-medium text-pastel-violet-t">{{ student.get_level_display }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}{% endblock %}

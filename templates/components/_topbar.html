@@ -1,0 +1,32 @@
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- TOPBAR - Barre supérieure minimaliste style Notion             -->
+<!-- Breadcrumb + bouton toggle sidebar                             -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+
+<header class="sticky top-0 z-30 bg-pg-bg/80 backdrop-blur-sm border-b border-transparent">
+    <div class="flex items-center justify-between max-w-5xl mx-auto px-16 py-3">
+
+        <!-- Gauche : Toggle sidebar + Breadcrumb -->
+        <div class="flex items-center gap-3">
+            <!-- Bouton toggle sidebar -->
+            <button
+                @click="sidebarOpen = !sidebarOpen"
+                class="p-1 rounded-md text-pg-text-s hover:bg-pg-hover hover:text-pg-text"
+                title="Basculer la barre latérale"
+            >
+                <i data-lucide="panel-left" class="w-4 h-4" stroke-width="1.5"></i>
+            </button>
+
+            <!-- Breadcrumb -->
+            <nav class="flex items-center gap-1.5 text-sm text-pg-text-s">
+                <span class="text-pg-text-xs">PROGRESS</span>
+                <i data-lucide="chevron-right" class="w-3 h-3 text-pg-text-xs" stroke-width="1.5"></i>
+                <span class="text-pg-text font-medium">{% block page_title %}Tableau de bord{% endblock %}</span>
+            </nav>
+        </div>
+
+        <!-- Droite : Actions (placeholder pour plus tard) -->
+        <div class="flex items-center gap-1">
+        </div>
+    </div>
+</header>

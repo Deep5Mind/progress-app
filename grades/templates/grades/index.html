@@ -1,0 +1,452 @@
+{% extends 'base.html' %}
+
+{% block title %}PROGRESS - Notes & Analyses{% endblock %}
+{% block page_title %}Notes & Analyses{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    {% if not student %}
+    <div class="text-center py-16">
+        <i data-lucide="book-open" class="w-12 h-12 text-pg-text-xs mx-auto mb-4" stroke-width="1.25"></i>
+        <h2 class="text-lg font-medium text-pg-text mb-1">Aucun profil étudiant</h2>
+        <p class="text-sm text-pg-text-s">Créez un profil via l'admin pour commencer.</p>
+    </div>
+    {% else %}
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- EN-TÊTE                                                     -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div class="flex items-start gap-4">
+        <div class="w-10 h-10 rounded-xl bg-pastel-pink flex items-center justify-center shrink-0 mt-1">
+            <i data-lucide="book-open" class="w-5 h-5 text-pastel-pink-t" stroke-width="1.5"></i>
+        </div>
+        <div>
+            <h1 class="text-3xl font-bold text-pg-text">Notes & Analyses</h1>
+            <p class="mt-1 text-pg-text-s text-sm">Gère tes matières, suis tes notes et anticipe tes résultats.</p>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- RÉSUMÉ RAPIDE (3 cartes)                                    -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div class="grid grid-cols-3 gap-4">
+        <div class="bg-pg-surface border border-pg-border rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+                <div class="w-7 h-7 rounded-lg bg-pastel-green flex items-center justify-center">
+                    <i data-lucide="calculator" class="w-3.5 h-3.5 text-pastel-green-t" stroke-width="1.5"></i>
+                </div>
+            </div>
+            <p class="text-xl font-bold text-pg-text">{% if general_average %}{{ general_average }}{% else %}—{% endif %}<span class="text-xs font-normal text-pg-text-s">/20</span></p>
+            <p class="text-xxs text-pg-text-xs mt-0.5">Moyenne générale</p>
+        </div>
+        <div class="bg-pg-surface border border-pg-border rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+                <div class="w-7 h-7 rounded-lg bg-pastel-violet flex items-center justify-center">
+                    <i data-lucide="layers" class="w-3.5 h-3.5 text-pastel-violet-t" stroke-width="1.5"></i>
+                </div>
+            </div>
+            <p class="text-xl font-bold text-pg-text">{{ courses_data|length }}</p>
+            <p class="text-xxs text-pg-text-xs mt-0.5">Matières</p>
+        </div>
+        <div class="bg-pg-surface border border-pg-border rounded-xl p-4">
+            <div class="flex items-center gap-2 mb-2">
+                <div class="w-7 h-7 rounded-lg bg-pastel-yellow flex items-center justify-center">
+                    <i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-pastel-yellow-t" stroke-width="1.5"></i>
+                </div>
+            </div>
+            <p class="text-xl font-bold text-pg-text">{{ difficulties|length }}</p>
+            <p class="text-xxs text-pg-text-xs mt-0.5">Matières en alerte</p>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- GRAPHIQUE COMPARATIF (Chart.js)                             -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    {% if courses_data %}
+    <div class="bg-pg-surface border border-pg-border rounded-xl p-5">
+        <div class="flex items-center gap-2 mb-4">
+            <div class="w-6 h-6 rounded-md bg-pastel-blue flex items-center justify-center">
+                <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-pastel-blue-t" stroke-width="1.5"></i>
+            </div>
+            <h2 class="text-sm font-semibold text-pg-text">Comparatif des matières</h2>
+        </div>
+        <div class="h-56">
+            <canvas id="coursesChart"></canvas>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- AJOUTER UNE MATIÈRE                                         -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <div class="bg-pg-surface border border-pg-border rounded-xl p-5" x-data="{ showForm: false }">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-md bg-pastel-mint flex items-center justify-center">
+                    <i data-lucide="book-plus" class="w-3.5 h-3.5 text-pastel-mint-t" stroke-width="1.5"></i>
+                </div>
+                <h2 class="text-sm font-semibold text-pg-text">Matières</h2>
+            </div>
+            <button @click="showForm = !showForm"
+                class="inline-flex items-center gap-1 text-xs text-pg-accent hover:text-pg-accent-h font-medium px-2 py-1 rounded-md hover:bg-pg-hover">
+                <i data-lucide="plus" class="w-3.5 h-3.5" stroke-width="1.5"></i>
+                Nouvelle matière
+            </button>
+        </div>
+
+        <!-- Formulaire d'ajout de matière -->
+        <div x-show="showForm" x-transition class="mt-4 p-4 bg-pg-bg rounded-lg border border-pg-border">
+            <form action="{% url 'grades:add_course' %}" method="POST" class="flex items-end gap-3">
+                {% csrf_token %}
+                <div class="flex-1">
+                    <label class="block text-xs font-medium text-pg-text-s mb-1">Nom de la matière</label>
+                    <input type="text" name="name" required placeholder="Ex: Mathématiques"
+                           class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                </div>
+                <div class="w-28">
+                    <label class="block text-xs font-medium text-pg-text-s mb-1">Coefficient</label>
+                    <input type="number" name="coefficient" step="0.5" min="0.5" max="10" value="1.0"
+                           class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                </div>
+                <button type="submit" class="px-4 py-2 text-xs text-white bg-pg-accent hover:bg-pg-accent-h rounded-lg font-medium shrink-0">
+                    Ajouter
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════ -->
+    <!-- LISTE DES MATIÈRES AVEC NOTES (accordéon Alpine.js)        -->
+    <!-- ════════════════════════════════════════════════════════════ -->
+    {% for item in courses_data %}
+    <div class="bg-pg-surface border border-pg-border rounded-xl overflow-hidden"
+         x-data="{ open: false, showAddGrade: false, showPredict: false }">
+
+        <!-- ── En-tête matière (cliquable pour déplier) ── -->
+        <div @click="open = !open" class="flex items-center justify-between p-5 cursor-pointer hover:bg-pg-hover">
+            <div class="flex items-center gap-3">
+                <div class="w-3 h-3 rounded-full
+                    {% cycle 'bg-pastel-violet-t' 'bg-pastel-blue-t' 'bg-pastel-pink-t' 'bg-pastel-green-t' 'bg-pastel-yellow-t' 'bg-pastel-peach-t' %}
+                "></div>
+                <div>
+                    <h3 class="text-sm font-semibold text-pg-text">{{ item.course.name }}</h3>
+                    <p class="text-xxs text-pg-text-xs">
+                        Coeff. {{ item.course.coefficient }} · {{ item.grade_count }} note{{ item.grade_count|pluralize:"s" }}
+                    </p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right">
+                    <p class="text-lg font-bold text-pg-text">
+                        {% if item.average %}{{ item.average }}{% else %}—{% endif %}<span class="text-xs font-normal text-pg-text-s">/20</span>
+                    </p>
+                </div>
+                <i data-lucide="chevron-down" class="w-4 h-4 text-pg-text-xs transition-transform"
+                   :class="open ? 'rotate-180' : ''" stroke-width="1.5"></i>
+            </div>
+        </div>
+
+        <!-- ── Contenu déplié ── -->
+        <div x-show="open" x-transition class="border-t border-pg-border">
+
+            <!-- Barre d'actions -->
+            <div class="flex items-center gap-2 px-5 py-3 bg-pg-bg border-b border-pg-border">
+                <button @click="showAddGrade = !showAddGrade"
+                    class="inline-flex items-center gap-1 text-xs text-pg-accent hover:text-pg-accent-h font-medium px-2 py-1 rounded-md hover:bg-pg-hover">
+                    <i data-lucide="plus" class="w-3 h-3" stroke-width="1.5"></i>
+                    Ajouter une note
+                </button>
+                <button @click="showPredict = !showPredict"
+                    class="inline-flex items-center gap-1 text-xs text-pastel-violet-t font-medium px-2 py-1 rounded-md hover:bg-pastel-violet/50">
+                    <i data-lucide="sparkles" class="w-3 h-3" stroke-width="1.5"></i>
+                    Prédiction
+                </button>
+                <div class="flex-1"></div>
+                <form action="{% url 'grades:delete_course' item.course.id %}" method="POST" class="inline"
+                      onsubmit="return confirm('Supprimer cette matière et toutes ses notes ?')">
+                    {% csrf_token %}
+                    <button type="submit" class="inline-flex items-center gap-1 text-xs text-pg-text-xs hover:text-pastel-rose-t font-medium px-2 py-1 rounded-md hover:bg-pastel-rose">
+                        <i data-lucide="trash-2" class="w-3 h-3" stroke-width="1.5"></i>
+                        Supprimer
+                    </button>
+                </form>
+            </div>
+
+            <!-- Formulaire d'ajout de note -->
+            <div x-show="showAddGrade" x-transition class="px-5 py-4 bg-pg-bg border-b border-pg-border">
+                <form action="{% url 'grades:add_grade' item.course.id %}" method="POST" class="space-y-3">
+                    {% csrf_token %}
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-pg-text-s mb-1">Note (/20)</label>
+                            <input type="number" name="value" step="0.25" min="0" max="20" required
+                                   class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-pg-text-s mb-1">Type</label>
+                            <select name="grade_type"
+                                    class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                                {% for code, label in grade_types %}
+                                <option value="{{ code }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-pg-text-s mb-1">Poids</label>
+                            <input type="number" name="weight" step="0.25" min="0.1" placeholder="Auto"
+                                   class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-pg-text-s mb-1">Date</label>
+                            <input type="date" name="date"
+                                   class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-pg-text-s mb-1">Description (optionnel)</label>
+                        <input type="text" name="description" placeholder="Ex: DS n°2 - Chapitre 3"
+                               class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="submit" class="px-4 py-2 text-xs text-white bg-pg-accent hover:bg-pg-accent-h rounded-lg font-medium">
+                            Enregistrer la note
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Formulaire de prédiction -->
+            <div x-show="showPredict" x-transition class="px-5 py-4 bg-pastel-violet/20 border-b border-pg-border">
+                <form action="{% url 'grades:predict' item.course.id %}" method="POST" class="flex items-end gap-3">
+                    {% csrf_token %}
+                    <div class="flex-1">
+                        <label class="block text-xs font-medium text-pastel-violet-t mb-1">Si j'obtiens cette note...</label>
+                        <input type="number" name="hypothetical_value" step="0.5" min="0" max="20" required placeholder="16"
+                               class="w-full text-sm border border-pastel-violet rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pastel-violet-t focus:border-pastel-violet-t">
+                    </div>
+                    <div class="w-24">
+                        <label class="block text-xs font-medium text-pastel-violet-t mb-1">Poids</label>
+                        <input type="number" name="hypothetical_weight" step="0.25" min="0.1" value="1.0"
+                               class="w-full text-sm border border-pastel-violet rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pastel-violet-t focus:border-pastel-violet-t">
+                    </div>
+                    <button type="submit" class="px-4 py-2 text-xs text-white bg-pastel-violet-t hover:opacity-90 rounded-lg font-medium shrink-0">
+                        Calculer
+                    </button>
+                </form>
+                {% if item.required_grade != None %}
+                <p class="mt-3 text-xs text-pastel-violet-t">
+                    <i data-lucide="info" class="w-3 h-3 inline" stroke-width="1.5"></i>
+                    Pour atteindre {{ item.goal.target_average }}/20, il te faut minimum
+                    <strong>{% if item.required_grade > 20 %}plus de 20 (impossible en un contrôle){% else %}{{ item.required_grade }}/20{% endif %}</strong>
+                    au prochain contrôle.
+                </p>
+                {% endif %}
+            </div>
+
+            <!-- Stats rapides de la matière -->
+            {% if item.average %}
+            <div class="flex items-center gap-6 px-5 py-3 border-b border-pg-border bg-pg-bg/50">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-xxs text-pg-text-xs">Moy.</span>
+                    <span class="text-xs font-semibold text-pg-text">{{ item.average }}/20</span>
+                </div>
+                {% if item.highest %}
+                <div class="flex items-center gap-1.5">
+                    <span class="text-xxs text-pg-text-xs">Max</span>
+                    <span class="text-xs font-semibold text-pastel-green-t">{{ item.highest }}</span>
+                </div>
+                {% endif %}
+                {% if item.lowest %}
+                <div class="flex items-center gap-1.5">
+                    <span class="text-xxs text-pg-text-xs">Min</span>
+                    <span class="text-xs font-semibold text-pastel-pink-t">{{ item.lowest }}</span>
+                </div>
+                {% endif %}
+                {% if item.goal %}
+                <div class="flex items-center gap-1.5">
+                    <span class="text-xxs text-pg-text-xs">Objectif</span>
+                    <span class="text-xs font-semibold text-pastel-violet-t">{{ item.goal.target_average }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Mini graphique d'évolution -->
+            {% if item.grade_count >= 2 %}
+            <div class="px-5 py-4 border-b border-pg-border">
+                <p class="text-xxs text-pg-text-xs mb-2 font-medium uppercase tracking-wider">Évolution de la moyenne</p>
+                <div class="h-32">
+                    <canvas id="chart-{{ item.course.id }}"></canvas>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Tableau des notes -->
+            {% if item.grades %}
+            <div class="px-5 py-3">
+                <table class="w-full">
+                    <thead>
+                        <tr class="text-left text-xxs text-pg-text-xs uppercase tracking-wider">
+                            <th class="pb-2 font-medium">Date</th>
+                            <th class="pb-2 font-medium">Type</th>
+                            <th class="pb-2 font-medium">Description</th>
+                            <th class="pb-2 font-medium text-right">Note</th>
+                            <th class="pb-2 font-medium text-right">Poids</th>
+                            <th class="pb-2 w-8"></th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-pg-border">
+                        {% for grade in item.grades %}
+                        <tr class="group hover:bg-pg-hover">
+                            <td class="py-2.5 text-xs text-pg-text-s">{{ grade.date|date:"d/m/Y" }}</td>
+                            <td class="py-2.5">
+                                <span class="text-xxs px-1.5 py-0.5 rounded
+                                    {% if grade.grade_type == 'DS' %}bg-pastel-blue text-pastel-blue-t
+                                    {% elif grade.grade_type == 'TP' %}bg-pastel-green text-pastel-green-t
+                                    {% elif grade.grade_type == 'EXAM' %}bg-pastel-pink text-pastel-pink-t
+                                    {% elif grade.grade_type == 'ORAL' %}bg-pastel-yellow text-pastel-yellow-t
+                                    {% elif grade.grade_type == 'EXPOSE' %}bg-pastel-peach text-pastel-peach-t
+                                    {% elif grade.grade_type == 'PROJECT' %}bg-pastel-violet text-pastel-violet-t
+                                    {% else %}bg-gray-100 text-pg-text-s{% endif %}
+                                ">{{ grade.get_grade_type_display }}</span>
+                            </td>
+                            <td class="py-2.5 text-xs text-pg-text-s">{{ grade.description|default:"—" }}</td>
+                            <td class="py-2.5 text-xs font-semibold text-pg-text text-right">{{ grade.value }}/20</td>
+                            <td class="py-2.5 text-xxs text-pg-text-xs text-right">{{ grade.weight }}</td>
+                            <td class="py-2.5 text-right">
+                                <form action="{% url 'grades:delete_grade' grade.id %}" method="POST" class="inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="p-1 rounded text-pg-text-xs opacity-0 group-hover:opacity-100 hover:text-pastel-rose-t hover:bg-pastel-rose" title="Supprimer">
+                                        <i data-lucide="x" class="w-3 h-3" stroke-width="1.5"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="px-5 py-6 text-center">
+                <p class="text-sm text-pg-text-s">Aucune note encore. Clique sur « Ajouter une note » ci-dessus.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+
+    {% if not courses_data %}
+    <div class="text-center py-12">
+        <i data-lucide="book-open" class="w-10 h-10 text-pg-text-xs mx-auto mb-3" stroke-width="1.25"></i>
+        <p class="text-sm text-pg-text-s">Aucune matière ajoutée. Commence par en créer une !</p>
+    </div>
+    {% endif %}
+
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Style commun pour les graphiques
+        Chart.defaults.font.family = 'Inter';
+        Chart.defaults.font.size = 11;
+        Chart.defaults.color = '#787774';
+
+        // ══════════════════════════════════════
+        // Graphique comparatif global (barres)
+        // ══════════════════════════════════════
+        const coursesCtx = document.getElementById('coursesChart');
+        if (coursesCtx) {
+            const labels = {{ chart_labels|safe }};
+            const averages = {{ chart_averages|safe }};
+            const targets = {{ chart_targets|safe }};
+
+            new Chart(coursesCtx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Moyenne',
+                            data: averages,
+                            backgroundColor: ['#E8DAEF', '#D4E6F1', '#F8D7DA', '#C8E6C9', '#FFF3CD', '#FDEBD0'],
+                            borderColor: ['#7B5EA7', '#5B7FA5', '#A25568', '#4A7C59', '#8B7355', '#B07D56'],
+                            borderWidth: 1.5,
+                            borderRadius: 6,
+                        },
+                        {
+                            label: 'Objectif',
+                            data: targets,
+                            type: 'line',
+                            borderColor: '#B4B4B0',
+                            borderWidth: 1.5,
+                            borderDash: [5, 3],
+                            pointBackgroundColor: '#B4B4B0',
+                            pointRadius: 3,
+                            fill: false,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: true, position: 'bottom',
+                            labels: { usePointStyle: true, pointStyle: 'circle', padding: 16 }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: false, min: 0, max: 20, grid: { color: '#F1EEEA' }, ticks: { stepSize: 4 } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        }
+
+        // ══════════════════════════════════════
+        // Mini graphiques d'évolution par matière
+        // ══════════════════════════════════════
+        const pastelLine  = ['#7B5EA7','#5B7FA5','#A25568','#4A7C59','#8B7355','#B07D56'];
+        const pastelFill  = ['#E8DAEF','#D4E6F1','#F8D7DA','#C8E6C9','#FFF3CD','#FDEBD0'];
+
+        {% for item in courses_data %}
+        {% if item.grade_count >= 2 %}
+        (function() {
+            const ctx = document.getElementById('chart-{{ item.course.id }}');
+            if (!ctx) return;
+            const idx = {{ forloop.counter0 }} % pastelLine.length;
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: {{ item.evolution_labels|safe }},
+                    datasets: [{
+                        data: {{ item.evolution_values|safe }},
+                        borderColor: pastelLine[idx],
+                        backgroundColor: pastelFill[idx] + '80',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: pastelLine[idx],
+                        fill: true,
+                        tension: 0.3,
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { min: 0, max: 20, grid: { color: '#F1EEEA' }, ticks: { stepSize: 5 } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        })();
+        {% endif %}
+        {% endfor %}
+    });
+
+    // MutationObserver Lucide géré globalement dans base.html
+</script>
+{% endblock %}
