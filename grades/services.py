@@ -9,9 +9,6 @@ Classe qui encapsule toute la logique d'analyse avancée :
   • Détection des matières en difficulté
 """
 
-from decimal import Decimal
-from collections import defaultdict
-
 
 class Analyzer:
     """
@@ -19,17 +16,16 @@ class Analyzer:
     Toutes les méthodes sont statiques pour être appelées
     sans instanciation depuis les vues.
     """
-
     @staticmethod
-    def predict_average(course, hypothetical_value, hypothetical_weight=1.0):
+    def predict_average(course, hypothetical_value, hypothetical_weight=100):
         """
         Prédit la nouvelle moyenne si l'étudiant obtient une note hypothétique.
-        Ex : "Si tu obtiens 16 au prochain DS, ta moyenne sera 14.5"
+        Ex : "Si tu obtiens 16 au prochain DS (poids 20%), ta moyenne sera 14.5"
 
         Args:
             course: l'objet Course
             hypothetical_value: la note hypothétique (sur 20)
-            hypothetical_weight: le poids de cette note hypothétique
+            hypothetical_weight: le poids en % (1-100) de cette note hypothétique
 
         Returns:
             float ou None : la moyenne prédite
@@ -49,7 +45,42 @@ class Analyzer:
         return round(total_weighted / total_weights, 2)
 
     @staticmethod
-    def required_grade_for_target(course, target_average, next_weight=1.0):
+    def predict_general_average(student, modified_course, new_course_average):
+        """
+        Calcule la moyenne générale prédite si une matière a une nouvelle moyenne.
+        Remplace la moyenne actuelle de modified_course par new_course_average
+        et recalcule la moyenne générale pondérée par les coefficients.
+
+        Args:
+            student: l'objet Student
+            modified_course: la matière dont la moyenne change
+            new_course_average: la nouvelle moyenne prédite pour cette matière
+
+        Returns:
+            float ou None : la moyenne générale prédite
+        """
+        courses = student.courses.all()
+        total_weighted = 0
+        total_coefficients = 0
+
+        for course in courses:
+            if course.id == modified_course.id:
+                avg = float(new_course_average)
+            else:
+                avg = course.get_average()
+                if avg is None:
+                    continue
+                avg = float(avg)
+
+            total_weighted += avg * float(course.coefficient)
+            total_coefficients += float(course.coefficient)
+
+        if total_coefficients == 0:
+            return None
+        return round(total_weighted / total_coefficients, 2)
+
+    @staticmethod
+    def required_grade_for_target(course, target_average, next_weight=100):
         """
         Calcule la note minimale requise au prochain contrôle
         pour atteindre un objectif de moyenne.
@@ -58,7 +89,7 @@ class Analyzer:
         Args:
             course: l'objet Course
             target_average: la moyenne visée
-            next_weight: le poids du prochain contrôle
+            next_weight: le poids en % du prochain contrôle (1-100)
 
         Returns:
             float ou None : la note requise (peut être > 20 si impossible)

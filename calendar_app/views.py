@@ -6,7 +6,8 @@ CRUD des événements. Toggle complétion.
 """
 
 import calendar as cal
-from datetime import date, timedelta
+from datetime import date
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.contrib import messages
@@ -55,7 +56,6 @@ def index(request):
     # Premier jour du mois et nombre de jours
     first_day = date(year, month, 1)
     num_days = cal.monthrange(year, month)[1]
-    last_day = date(year, month, num_days)
 
     # Jour de la semaine du 1er (0=lundi en Python)
     start_weekday = first_day.weekday()
@@ -152,7 +152,9 @@ def add_event(request):
         description = request.POST.get('description', '')
         is_all_day = request.POST.get('is_all_day') == 'on'
         reminder = request.POST.get('reminder') == 'on'
-        reminder_days = request.POST.get('reminder_days', '1')
+        reminder_days = request.POST.get('reminder_days', '0')
+        reminder_hours = request.POST.get('reminder_hours', '0')
+        reminder_minutes = request.POST.get('reminder_minutes', '0')
 
         if title and start_date:
             Event.objects.create(
@@ -165,7 +167,9 @@ def add_event(request):
                 description=description,
                 is_all_day=is_all_day,
                 reminder=reminder,
-                reminder_days=int(reminder_days) if reminder else 1,
+                reminder_days=int(reminder_days) if reminder else 0,
+                reminder_hours=int(reminder_hours) if reminder else 0,
+                reminder_minutes=int(reminder_minutes) if reminder else 0,
             )
             messages.success(request, f"Événement « {title} » ajouté !")
         else:
@@ -186,6 +190,45 @@ def delete_event(request, event_id):
 
 
 @login_required
+def update_event(request, event_id):
+    """Modifier un événement existant"""
+    if request.method == 'POST':
+        student = _get_student(request)
+        event = get_object_or_404(Event, id=event_id, student=student)
+
+        title = request.POST.get('title', '').strip()
+        event_type = request.POST.get('event_type', event.event_type)
+        start_date = request.POST.get('start_date', '')
+        start_time = request.POST.get('start_time', '') or None
+        end_time = request.POST.get('end_time', '') or None
+        description = request.POST.get('description', '')
+        is_all_day = request.POST.get('is_all_day') == 'on'
+        reminder = request.POST.get('reminder') == 'on'
+        reminder_days = request.POST.get('reminder_days', '0')
+        reminder_hours = request.POST.get('reminder_hours', '0')
+        reminder_minutes = request.POST.get('reminder_minutes', '0')
+
+        if title and start_date:
+            event.title = title
+            event.event_type = event_type
+            event.start_date = start_date
+            event.start_time = start_time if not is_all_day else None
+            event.end_time = end_time if not is_all_day else None
+            event.description = description
+            event.is_all_day = is_all_day
+            event.reminder = reminder
+            event.reminder_days = int(reminder_days) if reminder else 0
+            event.reminder_hours = int(reminder_hours) if reminder else 0
+            event.reminder_minutes = int(reminder_minutes) if reminder else 0
+            event.save()
+            messages.success(request, f"Événement « {title} » modifié !")
+        else:
+            messages.error(request, "Le titre et la date sont requis.")
+
+    return redirect('calendar:index')
+
+
+@login_required
 def toggle_event(request, event_id):
     """Basculer l'état terminé/non terminé d'un événement"""
     if request.method == 'POST':
@@ -194,3 +237,37 @@ def toggle_event(request, event_id):
         event.is_completed = not event.is_completed
         event.save()
     return redirect('calendar:index')
+
+
+@login_required
+def active_reminders(request):
+    """
+    API JSON : retourne la liste des rappels actifs pour l'utilisateur.
+    Appelé en polling par le script de notifications dans base.html.
+    """
+    student = _get_student(request)
+    if student is None:
+        return JsonResponse({'reminders': []})
+
+    today = timezone.now().date()
+    now = timezone.now()
+    events = Event.objects.filter(
+        student=student,
+        reminder=True,
+        is_completed=False,
+        start_date__gte=today,
+    )
+
+    reminders = []
+    for event in events:
+        if event.needs_reminder:
+            reminders.append({
+                'id': event.id,
+                'title': event.title,
+                'type': event.get_event_type_display(),
+                'date': event.start_date.strftime('%d/%m/%Y'),
+                'time': event.start_time.strftime('%H:%M') if event.start_time else None,
+                'reminder_display': event.reminder_display,
+            })
+
+    return JsonResponse({'reminders': reminders})

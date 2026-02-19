@@ -5,7 +5,7 @@ from .models import Professor, ProfessorNote, ContactLog, Bulletin
 
 @admin.register(Professor)
 class ProfessorAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'email', 'subjects', 'office_number', 'student')
+    list_display = ('full_name', 'email', 'subjects', 'status', 'other_job', 'student')
     list_filter = ('student',)
     search_fields = ('first_name', 'last_name', 'email', 'subjects')
 

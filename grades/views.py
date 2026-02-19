@@ -44,8 +44,14 @@ def index(request):
 
         # Prédiction : note requise pour l'objectif
         required = None
+        objective_reached = False
         if goal and avg is not None:
-            required = Analyzer.required_grade_for_target(course, goal.target_average)
+            if float(avg) >= float(goal.target_average):
+                objective_reached = True
+            elif course.get_remaining_weight() > 0:
+                required = Analyzer.required_grade_for_target(
+                    course, goal.target_average, next_weight=course.get_remaining_weight()
+                )
 
         courses_data.append({
             'course': course,
@@ -56,8 +62,11 @@ def index(request):
             'lowest': course.get_lowest_grade(),
             'goal': goal,
             'required_grade': required,
+            'objective_reached': objective_reached,
             'evolution_labels': json.dumps(evolution['labels']),
             'evolution_values': json.dumps(evolution['values']),
+            'total_weight': course.get_total_weight(),
+            'remaining_weight': course.get_remaining_weight(),
         })
 
     # ── Graphique comparatif global ──
@@ -132,15 +141,28 @@ def add_grade(request, course_id):
         grade_date = request.POST.get('date', '')
 
         if value:
-            # Utiliser le poids par défaut si non spécifié
+            # Poids par défaut : tout le restant, ou 100% si aucune note
             if not weight:
-                weight = Grade.DEFAULT_WEIGHTS.get(grade_type, 1.0)
+                remaining = course.get_remaining_weight()
+                weight = remaining if remaining > 0 else 100
+            weight = max(1, min(100, int(float(weight))))
+
+            # Validation : le total des poids ne doit pas dépasser 100%
+            current_total = course.get_total_weight()
+            if current_total + weight > 100:
+                remaining = course.get_remaining_weight()
+                messages.error(
+                    request,
+                    f"Impossible : le poids total dépasserait 100%. "
+                    f"Poids restant disponible : {remaining}%."
+                )
+                return redirect('grades:index')
 
             Grade.objects.create(
                 course=course,
                 value=float(value),
                 grade_type=grade_type,
-                weight=float(weight),
+                weight=weight,
                 description=description,
                 date=grade_date if grade_date else date.today(),
             )
@@ -163,6 +185,51 @@ def delete_grade(request, grade_id):
 
 
 @login_required
+def update_grade(request, grade_id):
+    """Modifier une note existante"""
+    if request.method == 'POST':
+        student = _get_student(request)
+        grade = get_object_or_404(Grade, id=grade_id, course__student=student)
+
+        value = request.POST.get('value', '')
+        grade_type = request.POST.get('grade_type', grade.grade_type)
+        weight = request.POST.get('weight', '')
+        description = request.POST.get('description', '')
+        grade_date = request.POST.get('date', '')
+
+        if value:
+            if not weight:
+                weight = grade.weight
+            weight = max(1, min(100, int(float(weight))))
+
+            # Validation : le total des poids ne doit pas dépasser 100%
+            old_weight = grade.weight
+            current_total = grade.course.get_total_weight()
+            new_total = current_total - old_weight + weight
+            if new_total > 100:
+                max_allowed = 100 - (current_total - old_weight)
+                messages.error(
+                    request,
+                    f"Impossible : le poids total dépasserait 100%. "
+                    f"Poids maximum pour cette note : {max_allowed}%."
+                )
+                return redirect('grades:index')
+
+            grade.value = float(value)
+            grade.grade_type = grade_type
+            grade.weight = weight
+            grade.description = description
+            if grade_date:
+                grade.date = grade_date
+            grade.save()
+            messages.success(request, "Note modifiée !")
+        else:
+            messages.error(request, "La note est requise.")
+
+    return redirect('grades:index')
+
+
+@login_required
 def predict(request, course_id):
     """
     Calcul de prédiction : affiche la moyenne si l'étudiant
@@ -174,20 +241,38 @@ def predict(request, course_id):
         course = get_object_or_404(Course, id=course_id, student=student)
 
         hypo_value = request.POST.get('hypothetical_value', '')
-        hypo_weight = request.POST.get('hypothetical_weight', '1.0')
+        hypo_weight = request.POST.get('hypothetical_weight', '')
 
         if hypo_value:
-            predicted = Analyzer.predict_average(
-                course,
-                float(hypo_value),
-                float(hypo_weight),
-            )
-            if predicted is not None:
-                messages.info(
+            remaining = course.get_remaining_weight()
+            if remaining <= 0:
+                messages.error(
                     request,
-                    f"Si tu obtiens {hypo_value}/20 en {course.name}, "
-                    f"ta moyenne passera à {predicted}/20."
+                    f"Les poids de {course.name} totalisent déjà 100%. "
+                    f"Aucune prédiction possible."
                 )
+            else:
+                # Plafonner le poids au restant disponible
+                weight = min(int(float(hypo_weight or remaining)), remaining)
+                weight = max(1, weight)
+
+                predicted = Analyzer.predict_average(
+                    course,
+                    float(hypo_value),
+                    float(weight),
+                )
+                if predicted is not None:
+                    # Calculer l'impact sur la moyenne générale
+                    predicted_general = Analyzer.predict_general_average(
+                        student, course, predicted
+                    )
+                    msg = (
+                        f"Si tu obtiens {hypo_value}/20 (poids {weight}%) en {course.name} :\n"
+                        f"• Ta moyenne en {course.name} passera à {predicted}/20"
+                    )
+                    if predicted_general is not None:
+                        msg += f"\n• Ta moyenne générale passera à {predicted_general}/20"
+                    messages.info(request, msg)
         else:
             messages.error(request, "Entre une note hypothétique.")
 

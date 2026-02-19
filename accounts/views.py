@@ -42,7 +42,7 @@ def register_view(request):
         email = request.POST.get('email', '').strip()
         first_name = request.POST.get('first_name', '').strip()
         last_name = request.POST.get('last_name', '').strip()
-        level = request.POST.get('level', 'L3')
+        level = request.POST.get('level', 'ISE1CL')
         password1 = request.POST.get('password1', '')
         password2 = request.POST.get('password2', '')
 

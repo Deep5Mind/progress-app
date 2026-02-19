@@ -3,6 +3,16 @@
 
 {% block title %}PROGRESS - Paramètres{% endblock %}
 
+{% block extra_css %}
+<style>
+.accent-dot-sage     { background-color: #6B8F71; }
+.accent-dot-ocean    { background-color: #5B7FA5; }
+.accent-dot-lavender { background-color: #7B5EA7; }
+.accent-dot-peach    { background-color: #B07D56; }
+.accent-dot-rose     { background-color: #A25568; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div x-data="{ activeTab: 'appearance' }">
 
@@ -153,8 +163,7 @@
                                    {% else %}
                                        border-pg-border hover:border-pg-text-xs
                                    {% endif %}">
-                        <div class="w-5 h-5 rounded-full shadow-sm"
-                             style="background-color: {% if code == 'sage' %}#6B8F71{% elif code == 'ocean' %}#5B7FA5{% elif code == 'lavender' %}#7B5EA7{% elif code == 'peach' %}#B07D56{% elif code == 'rose' %}#A25568{% endif %};"></div>
+                        <div class="w-5 h-5 rounded-full shadow-sm accent-dot-{{ code }}"></div>
                         <span class="text-sm text-pg-text">{{ label }}</span>
                     </button>
                 </form>
@@ -254,11 +263,17 @@
                     <select name="level"
                             class="w-full px-3 py-2 rounded-lg border border-pg-border bg-pg-bg text-sm text-pg-text
                                    focus:outline-none focus:ring-2 focus:ring-pg-accent/20 focus:border-pg-accent">
-                        <option value="L1" {% if user.student.level == 'L1' %}selected{% endif %}>Licence 1</option>
-                        <option value="L2" {% if user.student.level == 'L2' %}selected{% endif %}>Licence 2</option>
-                        <option value="L3" {% if user.student.level == 'L3' %}selected{% endif %}>Licence 3</option>
-                        <option value="M1" {% if user.student.level == 'M1' %}selected{% endif %}>Master 1</option>
-                        <option value="M2" {% if user.student.level == 'M2' %}selected{% endif %}>Master 2</option>
+                        <option value="ISEP1" {% if user.student.level == 'ISEP1' %}selected{% endif %}>ISEP 1</option>
+                        <option value="ISEP2" {% if user.student.level == 'ISEP2' %}selected{% endif %}>ISEP 2</option>
+                        <option value="AS1" {% if user.student.level == 'AS1' %}selected{% endif %}>AS 1</option>
+                        <option value="AS2" {% if user.student.level == 'AS2' %}selected{% endif %}>AS 2</option>
+                        <option value="AS3" {% if user.student.level == 'AS3' %}selected{% endif %}>AS 3</option>
+                        <option value="ISE1CL" {% if user.student.level == 'ISE1CL' %}selected{% endif %}>ISE 1 CL</option>
+                        <option value="ISE1ECO" {% if user.student.level == 'ISE1ECO' %}selected{% endif %}>ISE 1 ECO</option>
+                        <option value="ISE2" {% if user.student.level == 'ISE2' %}selected{% endif %}>ISE 2</option>
+                        <option value="ISE3" {% if user.student.level == 'ISE3' %}selected{% endif %}>ISE 3</option>
+                        <option value="MADEPP" {% if user.student.level == 'MADEPP' %}selected{% endif %}>Master ADEPP</option>
+                        <option value="MAGRI" {% if user.student.level == 'MAGRI' %}selected{% endif %}>Master AGRI</option>
                     </select>
                 </div>
 
@@ -510,7 +525,7 @@
                 leur parcours académique de manière organisée et agréable. Elle permet le
                 suivi des notes avec calcul automatique des moyennes pondérées, la gestion
                 du calendrier, le répertoire des professeurs, la prédiction de performances
-                et la génération de documents PDF (bulletins et statistiques).
+                et la génération de documents PDF.
             </p>
         </div>
 
@@ -524,7 +539,7 @@
                     </div>
                     <div>
                         <p class="text-sm font-medium text-pg-text">Leslye Nkwa</p>
-                        <p class="text-xs text-pg-text-s">Développeuse</p>
+                        <p class="text-xs text-pg-text-s">Etudiante en ISE 1 CL à l'ENSAE</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3 p-3 bg-pastel-violet/30 rounded-lg">
@@ -533,7 +548,7 @@
                     </div>
                     <div>
                         <p class="text-sm font-medium text-pg-text">Marème Diop</p>
-                        <p class="text-xs text-pg-text-s">Développeuse</p>
+                        <p class="text-xs text-pg-text-s">Etudiante en ISE 1 CL à l'ENSAE </p>
                     </div>
                 </div>
                 <div class="flex items-center gap-3 p-3 bg-pastel-blue/30 rounded-lg">
@@ -542,15 +557,15 @@
                     </div>
                     <div>
                         <p class="text-sm font-medium text-pg-text">Trésor Riradjim</p>
-                        <p class="text-xs text-pg-text-s">Développeur</p>
+                        <p class="text-xs text-pg-text-s">Etudiant en ISE 1 CL à l'ENSAE</p>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Cadre académique -->
+        <!-- Cadre d'existence de cette application -->
         <div class="bg-pg-surface rounded-xl border border-pg-border p-6">
-            <h2 class="text-base font-semibold text-pg-text mb-3">Cadre académique</h2>
+            <h2 class="text-base font-semibold text-pg-text mb-3">Cadre d'existence de cette application : Cadre académique</h2>
             <div class="space-y-2 text-sm text-pg-text-s">
                 <div class="flex items-center gap-2">
                     <i data-lucide="graduation-cap" class="w-4 h-4 shrink-0" stroke-width="1.5"></i>
@@ -629,11 +644,12 @@
         <div class="bg-pg-surface rounded-xl border border-pg-border p-6">
             <h2 class="text-base font-semibold text-pg-text mb-2">Licence & Remerciements</h2>
             <p class="text-sm text-pg-text-s leading-relaxed">
-                Projet réalisé dans le cadre du cours d'Algorithme et Programmation avec Python avancé
-                à l'ENSAE de Dakar (année 2025-2026). Cette application est un projet académique
-                à but éducatif.
+                Ce projet est réalisé dans le cadre du cours d'Algorithme et Programmation avec Python avancé
+                à l'ENSAE de Dakar (année académique 2025-2026). C'est donc un projet académique
+                à but éducatif mais nous serions ravi de savoir qu'il a permis à des étudiants de mieux s'organiser 
+                tout en suivant leur progression académique afin de ne pas se perdre ni de se décourager en chemin...!
             </p>
-            <p class="text-xs text-pg-text-xs mt-3">PROGRESS v1.0 &mdash; Fait avec soin par l'équipe PROGRESS</p>
+            <p class="text-xs text-pg-text-xs mt-3">PROGRESS v1.0 &mdash; Fait avec amour et nuits blanches par la team LMT de PROGRESS</p>
         </div>
 
     </div>

@@ -28,13 +28,20 @@ class Student(models.Model):
     Lié au système d'authentification Django via OneToOneField.
     """
 
-    # ── Choix pour le niveau d'études ──
+    # ── Choix pour la classe (ENSAE Dakar) ──
     LEVEL_CHOICES = [
-        ('L1', 'Licence 1'),
-        ('L2', 'Licence 2'),
-        ('L3', 'Licence 3'),
-        ('M1', 'Master 1'),
-        ('M2', 'Master 2'),
+        ('ISEP1', 'ISEP 1'),
+        ('ISEP2', 'ISEP 2'),
+        ('AS1', 'AS 1'),
+        ('AS2', 'AS 2'),
+        ('AS3', 'AS 3'),
+        ('ISE1CL', 'ISE 1 CL'),
+        ('ISE1ECO', 'ISE 1 ECO'),
+        ('ISE1MATHS', 'ISE 1 MATHS'),
+        ('ISE2', 'ISE 2'),
+        ('ISE3', 'ISE 3'),
+        ('MADEPP', 'Master ADEPP'),
+        ('MAGRI', 'Master AGRI'),
     ]
 
     user = models.OneToOneField(
@@ -52,10 +59,10 @@ class Student(models.Model):
         verbose_name="Nom"
     )
     level = models.CharField(
-        max_length=2,
+        max_length=10,
         choices=LEVEL_CHOICES,
-        default='L3',
-        verbose_name="Niveau d'études"
+        default='ISE1CL',
+        verbose_name="Classe"
     )
     created_at = models.DateTimeField(
         auto_now_add=True,
@@ -167,6 +174,15 @@ class Course(models.Model):
         worst = self.grades.order_by('value').first()
         return worst.value if worst else None
 
+    def get_total_weight(self):
+        """Retourne la somme des poids (%) de toutes les notes de cette matiere."""
+        total = self.grades.aggregate(total=models.Sum('weight'))['total']
+        return total or 0
+
+    def get_remaining_weight(self):
+        """Retourne le poids restant disponible (100 - total actuel)."""
+        return 100 - self.get_total_weight()
+
 
 # ═══════════════════════════════════════════════════════════════════
 # GRADE - Note individuelle
@@ -193,16 +209,7 @@ class Grade(models.Model):
         ('OTHER', 'Autre'),
     ]
 
-    # ── Poids par défaut selon le type (sur 1.0) ──
-    DEFAULT_WEIGHTS = {
-        'DS': 1.0,
-        'TP': 0.5,
-        'EXAM': 2.0,
-        'ORAL': 1.0,
-        'EXPOSE': 0.75,
-        'PROJECT': 1.5,
-        'OTHER': 1.0,
-    }
+    # Pas de poids par défaut : l'étudiant saisit le % manuellement
 
     course = models.ForeignKey(
         Course,
@@ -222,12 +229,10 @@ class Grade(models.Model):
         default='DS',
         verbose_name="Type d'évaluation"
     )
-    weight = models.DecimalField(
-        max_digits=4,
-        decimal_places=2,
-        validators=[MinValueValidator(0.1)],
-        verbose_name="Poids dans la moyenne",
-        help_text="Le poids de cette note dans le calcul de la moyenne"
+    weight = models.PositiveIntegerField(
+        validators=[MinValueValidator(1), MaxValueValidator(100)],
+        verbose_name="Poids (%)",
+        help_text="Le pourcentage de cette évaluation dans la moyenne (ex: 20 pour 20%)"
     )
     description = models.CharField(
         max_length=200,
@@ -253,10 +258,9 @@ class Grade(models.Model):
         return f"{self.get_grade_type_display()} - {self.value}/20 ({self.course.name})"
 
     def save(self, *args, **kwargs):
-        """
-        Avant la sauvegarde : si aucun poids n'est défini,
-        on attribue le poids par défaut du type d'évaluation.
-        """
-        if not self.weight:
-            self.weight = self.DEFAULT_WEIGHTS.get(self.grade_type, 1.0)
+        """Avant la sauvegarde : si aucun poids n'est défini, mettre 100%."""
+        if not self.weight or self.weight < 1:
+            self.weight = 100
+        if self.weight > 100:
+            self.weight = 100
         super().save(*args, **kwargs)

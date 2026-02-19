@@ -49,18 +49,30 @@ class Professor(models.Model):
         verbose_name="Matières enseignées",
         help_text="Séparer par des virgules. Ex : Python, Statistiques",
     )
-    office_number = models.CharField(
-        max_length=50,
+    STATUS_CHOICES = [
+        ('PERMANENT', 'Permanent'),
+        ('VACATAIRE', 'Vacataire'),
+    ]
+
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default='VACATAIRE',
+        verbose_name="Statut",
+    )
+    other_job = models.CharField(
+        max_length=200,
         blank=True,
         default='',
-        verbose_name="Numéro de bureau",
+        verbose_name="Métier / Lieu de travail",
+        help_text="Ex : Banquier à la BCEAO, Enseignant à l'UCAD",
     )
     office_hours = models.CharField(
         max_length=200,
         blank=True,
         default='',
-        verbose_name="Horaires de permanence",
-        help_text="Ex : Lundi 14h-16h, Mercredi 10h-12h",
+        verbose_name="Disponibilités",
+        help_text="Ex : Lundi 14h-16h, sur rendez-vous",
     )
     created_at = models.DateTimeField(
         auto_now_add=True,

@@ -8,5 +8,7 @@ urlpatterns = [
     path('', views.index, name='index'),
     path('add/', views.add_event, name='add_event'),
     path('delete/<int:event_id>/', views.delete_event, name='delete_event'),
+    path('update/<int:event_id>/', views.update_event, name='update_event'),
     path('toggle/<int:event_id>/', views.toggle_event, name='toggle_event'),
+    path('api/reminders/', views.active_reminders, name='active_reminders'),
 ]

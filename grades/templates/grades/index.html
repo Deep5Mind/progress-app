@@ -133,6 +133,7 @@
                     <h3 class="text-sm font-semibold text-pg-text">{{ item.course.name }}</h3>
                     <p class="text-xxs text-pg-text-xs">
                         Coeff. {{ item.course.coefficient }} · {{ item.grade_count }} note{{ item.grade_count|pluralize:"s" }}
+                        · <span class="{% if item.total_weight == 100 %}text-pastel-green-t{% elif item.total_weight > 100 %}text-pastel-rose-t font-semibold{% else %}text-pg-text-xs{% endif %}">Poids : {{ item.total_weight }}%/100%</span>
                     </p>
                 </div>
             </div>
@@ -193,9 +194,13 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-pg-text-s mb-1">Poids</label>
-                            <input type="number" name="weight" step="0.25" min="0.1" placeholder="Auto"
-                                   class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent">
+                            <label class="block text-xs font-medium text-pg-text-s mb-1">Poids (%)</label>
+                            <input type="number" name="weight" step="1" min="1" max="{{ item.remaining_weight }}" placeholder="Ex: 20 pour 20%"
+                                   class="w-full text-sm border border-pg-border rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent focus:border-pg-accent"
+                                   {% if item.remaining_weight <= 0 %}disabled{% endif %}>
+                            <p class="text-xxs mt-0.5 {% if item.remaining_weight <= 0 %}text-pastel-rose-t{% elif item.remaining_weight < 100 %}text-pastel-yellow-t{% else %}text-pg-text-xs{% endif %}">
+                                Restant : {{ item.remaining_weight }}%
+                            </p>
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-pg-text-s mb-1">Date</label>
@@ -225,16 +230,22 @@
                         <input type="number" name="hypothetical_value" step="0.5" min="0" max="20" required placeholder="16"
                                class="w-full text-sm border border-pastel-violet rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pastel-violet-t focus:border-pastel-violet-t">
                     </div>
-                    <div class="w-24">
-                        <label class="block text-xs font-medium text-pastel-violet-t mb-1">Poids</label>
-                        <input type="number" name="hypothetical_weight" step="0.25" min="0.1" value="1.0"
+                    <div class="w-28">
+                        <label class="block text-xs font-medium text-pastel-violet-t mb-1">Poids (%)</label>
+                        <input type="number" name="hypothetical_weight" step="1" min="1" max="{{ item.remaining_weight }}" value="{{ item.remaining_weight }}" placeholder="Ex: 30"
                                class="w-full text-sm border border-pastel-violet rounded-lg px-3 py-2 bg-white text-pg-text focus:ring-1 focus:ring-pastel-violet-t focus:border-pastel-violet-t">
+                        <p class="text-xxs text-pastel-violet-t mt-0.5">Restant : {{ item.remaining_weight }}%</p>
                     </div>
                     <button type="submit" class="px-4 py-2 text-xs text-white bg-pastel-violet-t hover:opacity-90 rounded-lg font-medium shrink-0">
                         Calculer
                     </button>
                 </form>
-                {% if item.required_grade != None %}
+                {% if item.objective_reached %}
+                <p class="mt-3 text-xs text-pastel-green-t">
+                    <i data-lucide="check-circle" class="w-3 h-3 inline" stroke-width="1.5"></i>
+                    Bravo ! Ton objectif de {{ item.goal.target_average }}/20 est atteint (moyenne actuelle : {{ item.average }}/20).
+                </p>
+                {% elif item.required_grade != None %}
                 <p class="mt-3 text-xs text-pastel-violet-t">
                     <i data-lucide="info" class="w-3 h-3 inline" stroke-width="1.5"></i>
                     Pour atteindre {{ item.goal.target_average }}/20, il te faut minimum
@@ -269,6 +280,23 @@
                     <span class="text-xs font-semibold text-pastel-violet-t">{{ item.goal.target_average }}</span>
                 </div>
                 {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Indicateur poids total -->
+            {% if item.total_weight > 0 and item.total_weight < 100 %}
+            <div class="flex items-center gap-2 px-5 py-2 bg-pastel-yellow/30 border-b border-pg-border">
+                <i data-lucide="alert-circle" class="w-3.5 h-3.5 text-pastel-yellow-t" stroke-width="1.5"></i>
+                <span class="text-xxs text-pastel-yellow-t">
+                    Poids total : {{ item.total_weight }}% / 100% — Il reste {{ item.remaining_weight }}% à attribuer.
+                </span>
+            </div>
+            {% elif item.total_weight == 100 %}
+            <div class="flex items-center gap-2 px-5 py-2 bg-pastel-green/30 border-b border-pg-border">
+                <i data-lucide="check-circle" class="w-3.5 h-3.5 text-pastel-green-t" stroke-width="1.5"></i>
+                <span class="text-xxs text-pastel-green-t">
+                    Poids total : 100% — Complet
+                </span>
             </div>
             {% endif %}
 
@@ -313,18 +341,76 @@
                             </td>
                             <td class="py-2.5 text-xs text-pg-text-s">{{ grade.description|default:"—" }}</td>
                             <td class="py-2.5 text-xs font-semibold text-pg-text text-right">{{ grade.value }}/20</td>
-                            <td class="py-2.5 text-xxs text-pg-text-xs text-right">{{ grade.weight }}</td>
-                            <td class="py-2.5 text-right">
-                                <form action="{% url 'grades:delete_grade' grade.id %}" method="POST" class="inline">
-                                    {% csrf_token %}
-                                    <button type="submit" class="p-1 rounded text-pg-text-xs opacity-0 group-hover:opacity-100 hover:text-pastel-rose-t hover:bg-pastel-rose" title="Supprimer">
-                                        <i data-lucide="x" class="w-3 h-3" stroke-width="1.5"></i>
+                            <td class="py-2.5 text-xxs text-pg-text-xs text-right">{{ grade.weight }}%</td>
+                            <td class="py-2.5 text-right" x-data="{ showEdit: false }">
+                                <div class="flex items-center justify-end gap-1">
+                                    <button @click="showEdit = true" class="p-1 rounded text-pg-text-xs opacity-0 group-hover:opacity-100 hover:text-pg-accent hover:bg-pg-hover" title="Modifier">
+                                        <i data-lucide="pencil" class="w-3 h-3" stroke-width="1.5"></i>
                                     </button>
-                                </form>
+                                    <form action="{% url 'grades:delete_grade' grade.id %}" method="POST" class="inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="p-1 rounded text-pg-text-xs opacity-0 group-hover:opacity-100 hover:text-pastel-rose-t hover:bg-pastel-rose" title="Supprimer">
+                                            <i data-lucide="x" class="w-3 h-3" stroke-width="1.5"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                                <!-- Modal modification (fixed overlay) -->
+                                <div x-show="showEdit" x-transition.opacity class="fixed inset-0 z-50 flex items-center justify-center bg-black/30" @click.self="showEdit = false" style="display:none;">
+                                    <div class="bg-pg-surface border border-pg-border rounded-xl shadow-2xl p-5 w-80 text-left" @click.stop>
+                                        <form action="{% url 'grades:update_grade' grade.id %}" method="POST" class="space-y-3">
+                                            {% csrf_token %}
+                                            <p class="text-sm font-semibold text-pg-text">Modifier la note</p>
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <div>
+                                                    <label class="text-xxs text-pg-text-s">Note /20</label>
+                                                    <input type="number" name="value" value="{{ grade.value }}" step="0.25" min="0" max="20"
+                                                           class="w-full text-sm border border-pg-border rounded-lg px-2 py-1.5 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent">
+                                                </div>
+                                                <div>
+                                                    <label class="text-xxs text-pg-text-s">Poids (%)</label>
+                                                    <input type="number" name="weight" value="{{ grade.weight }}" min="1" max="100" step="1"
+                                                           class="w-full text-sm border border-pg-border rounded-lg px-2 py-1.5 bg-white text-pg-text focus:ring-1 focus:ring-pg-accent">
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="text-xxs text-pg-text-s">Type</label>
+                                                <select name="grade_type" class="w-full text-sm border border-pg-border rounded-lg px-2 py-1.5 bg-white text-pg-text">
+                                                    {% for code, label in grade_types %}
+                                                    <option value="{{ code }}" {% if grade.grade_type == code %}selected{% endif %}>{{ label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label class="text-xxs text-pg-text-s">Description</label>
+                                                <input type="text" name="description" value="{{ grade.description }}"
+                                                       class="w-full text-sm border border-pg-border rounded-lg px-2 py-1.5 bg-white text-pg-text">
+                                            </div>
+                                            <div>
+                                                <label class="text-xxs text-pg-text-s">Date</label>
+                                                <input type="date" name="date" value="{{ grade.date|date:'Y-m-d' }}"
+                                                       class="w-full text-sm border border-pg-border rounded-lg px-2 py-1.5 bg-white text-pg-text">
+                                            </div>
+                                            <div class="flex gap-2 pt-1">
+                                                <button type="submit" class="px-3 py-1.5 text-xs text-white bg-pg-accent hover:bg-pg-accent-h rounded-lg font-medium">Enregistrer</button>
+                                                <button type="button" @click="showEdit = false" class="px-3 py-1.5 text-xs text-pg-text-s hover:text-pg-text rounded-lg hover:bg-pg-hover">Annuler</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
                             </td>
                         </tr>
                         {% endfor %}
                     </tbody>
+                    <tfoot>
+                        <tr class="border-t border-pg-border">
+                            <td colspan="4" class="py-2 text-xxs text-pg-text-xs text-right font-medium">Total poids :</td>
+                            <td class="py-2 text-xxs font-semibold text-right
+                                {% if item.total_weight == 100 %}text-pastel-green-t{% elif item.total_weight > 100 %}text-pastel-rose-t{% else %}text-pastel-yellow-t{% endif %}">
+                                {{ item.total_weight }}%
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
             {% else %}

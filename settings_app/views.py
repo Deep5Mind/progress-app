@@ -4,7 +4,6 @@ PROGRESS - Vues des Paramètres
 Page de paramètres avec thème, police, couleur, infos profil, à propos.
 """
 
-import json
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -90,7 +89,7 @@ def update_accent(request):
         if accent in dict(UserPreference.ACCENT_CHOICES):
             prefs.accent_color = accent
             prefs.save()
-            messages.success(request, f"Couleur d'accent changée !")
+            messages.success(request, "Couleur d'accent changée !")
     return redirect('settings:index')
 
 
@@ -219,8 +218,9 @@ def export_data(request):
                 'nom': prof.last_name,
                 'email': prof.email,
                 'matieres': prof.subjects,
-                'bureau': prof.office_number,
-                'horaires': prof.office_hours,
+                'statut': prof.get_status_display(),
+                'metier_exterieur': prof.other_job,
+                'disponibilites': prof.office_hours,
             })
 
         response = JsonResponse(data, json_dumps_params={'indent': 2, 'ensure_ascii': False})

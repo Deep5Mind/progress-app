@@ -154,6 +154,25 @@
     <!-- ════════════════════════════════════════════════════════ -->
     {% include 'components/_toast.html' %}
 
+    <!-- ════════════════════════════════════════════════════════ -->
+    <!-- BANNIÈRE DE RAPPELS (notifications temps réel)          -->
+    <!-- ════════════════════════════════════════════════════════ -->
+    <div id="reminder-banner" style="display:none;"
+         class="fixed top-0 left-0 right-0 z-[60] bg-white/95 backdrop-blur border-b border-red-200 shadow-md">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center shrink-0 animate-pulse">
+                <i data-lucide="bell-ring" class="w-4 h-4 text-red-500" stroke-width="2"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+                <p class="text-sm font-semibold text-red-600" id="reminder-title"></p>
+                <p class="text-xxs text-red-400" id="reminder-detail"></p>
+            </div>
+            <button onclick="dismissReminder()" class="p-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600 shrink-0">
+                <i data-lucide="x" class="w-4 h-4" stroke-width="1.5"></i>
+            </button>
+        </div>
+    </div>
+
     <!-- Initialiser les icônes Lucide -->
     <script>
         lucide.createIcons();
@@ -165,6 +184,77 @@
             }
         }, 500);
     </script>
+
+    <!-- Système de notifications de rappels -->
+    {% if user.is_authenticated %}
+    <script>
+        let dismissedReminders = JSON.parse(sessionStorage.getItem('dismissedReminders') || '[]');
+
+        function dismissReminder() {
+            const banner = document.getElementById('reminder-banner');
+            const currentId = banner.dataset.eventId;
+            if (currentId) {
+                dismissedReminders.push(parseInt(currentId));
+                sessionStorage.setItem('dismissedReminders', JSON.stringify(dismissedReminders));
+            }
+            banner.style.display = 'none';
+        }
+
+        function showBrowserNotification(title, body) {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification(title, { body: body, icon: '{% static "img/logo.png" %}' });
+            }
+        }
+
+        async function checkReminders() {
+            try {
+                const res = await fetch('{% url "calendar:active_reminders" %}');
+                const data = await res.json();
+
+                if (data.reminders && data.reminders.length > 0) {
+                    // Filtrer ceux qui ont été fermés
+                    const active = data.reminders.filter(r => !dismissedReminders.includes(r.id));
+
+                    if (active.length > 0) {
+                        const r = active[0];
+                        const banner = document.getElementById('reminder-banner');
+                        const titleEl = document.getElementById('reminder-title');
+                        const detailEl = document.getElementById('reminder-detail');
+
+                        titleEl.textContent = ' Hey, petit rappel : ' + r.title;
+                        detailEl.textContent = r.type + ' · ' + r.date + (r.time ? ' à ' + r.time : '') + ' · ' + r.reminder_display;
+                        banner.dataset.eventId = r.id;
+                        banner.style.display = 'block';
+
+                        // Notification navigateur (une seule fois par événement)
+                        const notifKey = 'notified_' + r.id;
+                        if (!sessionStorage.getItem(notifKey)) {
+                            showBrowserNotification('PROGRESS - Rappel', r.title + ' · ' + (r.time || 'Toute la journée'));
+                            sessionStorage.setItem(notifKey, 'true');
+                        }
+
+                        lucide.createIcons();
+                    } else {
+                        document.getElementById('reminder-banner').style.display = 'none';
+                    }
+                } else {
+                    document.getElementById('reminder-banner').style.display = 'none';
+                }
+            } catch (e) {
+                // Silencieux en cas d'erreur réseau
+            }
+        }
+
+        // Demander la permission pour les notifications navigateur
+        if ('Notification' in window && Notification.permission === 'default') {
+            Notification.requestPermission();
+        }
+
+        // Vérifier immédiatement puis toutes les 30 secondes
+        checkReminders();
+        setInterval(checkReminders, 30000);
+    </script>
+    {% endif %}
 
     {% block extra_js %}{% endblock %}
 </body>

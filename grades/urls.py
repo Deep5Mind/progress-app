@@ -12,6 +12,7 @@ urlpatterns = [
     # Notes
     path('course/<int:course_id>/grade/add/', views.add_grade, name='add_grade'),
     path('grade/<int:grade_id>/delete/', views.delete_grade, name='delete_grade'),
+    path('grade/<int:grade_id>/update/', views.update_grade, name='update_grade'),
     # Prédictions
     path('course/<int:course_id>/predict/', views.predict, name='predict'),
 ]

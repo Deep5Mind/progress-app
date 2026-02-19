@@ -30,9 +30,8 @@ env/
 Thumbs.db
 nul
 
-# Generated docs (can be regenerated)
-PROGRESS_Documentation_Technique.pdf
-Application_Cozy_Student_Space.pdf
+# Generated docs
+*.pdf
 
 # Claude Code
 .claude/

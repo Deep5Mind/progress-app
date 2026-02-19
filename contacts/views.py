@@ -87,7 +87,8 @@ def add_professor(request):
         last_name = request.POST.get('last_name', '').strip()
         email = request.POST.get('email', '').strip()
         subjects = request.POST.get('subjects', '').strip()
-        office_number = request.POST.get('office_number', '').strip()
+        status = request.POST.get('status', 'VACATAIRE')
+        other_job = request.POST.get('other_job', '').strip()
         office_hours = request.POST.get('office_hours', '').strip()
 
         if first_name and last_name:
@@ -97,7 +98,8 @@ def add_professor(request):
                 last_name=last_name,
                 email=email,
                 subjects=subjects,
-                office_number=office_number,
+                status=status,
+                other_job=other_job,
                 office_hours=office_hours,
             )
             messages.success(request, f"Professeur {first_name} {last_name} ajouté !")
@@ -130,7 +132,8 @@ def update_professor(request, professor_id):
         professor.last_name = request.POST.get('last_name', professor.last_name).strip()
         professor.email = request.POST.get('email', '').strip()
         professor.subjects = request.POST.get('subjects', '').strip()
-        professor.office_number = request.POST.get('office_number', '').strip()
+        professor.status = request.POST.get('status', professor.status)
+        professor.other_job = request.POST.get('other_job', '').strip()
         professor.office_hours = request.POST.get('office_hours', '').strip()
         professor.save()
         messages.success(request, f"Professeur {professor.full_name} mis à jour !")

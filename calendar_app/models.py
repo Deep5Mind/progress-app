@@ -5,7 +5,9 @@ PROGRESS - Modèles du Calendrier (Onglet 3)
     (cours, examen, révision, devoir, personnel)
 """
 
+from datetime import datetime as dt, timedelta
 from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 from core.models import Student
 
@@ -86,6 +88,18 @@ class Event(models.Model):
         verbose_name="Rappel (jours avant)",
         help_text="Nombre de jours avant l'événement"
     )
+    reminder_hours = models.PositiveIntegerField(
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(23)],
+        verbose_name="Rappel (heures avant)",
+        help_text="Nombre d'heures avant l'événement (0-23)"
+    )
+    reminder_minutes = models.PositiveIntegerField(
+        default=0,
+        validators=[MinValueValidator(0), MaxValueValidator(59)],
+        verbose_name="Rappel (minutes avant)",
+        help_text="Nombre de minutes avant l'événement (0-59)"
+    )
     created_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name="Date de création"
@@ -117,11 +131,45 @@ class Event(models.Model):
     @property
     def needs_reminder(self):
         """
-        True si le rappel est activé et qu'on est dans
-        la fenêtre de rappel (X jours avant l'événement).
+        True si le rappel est activé et qu'on est dans la fenêtre de rappel.
+        Utilise jours + heures + minutes pour un calcul précis.
         """
         if not self.reminder or self.is_completed:
             return False
-        today = timezone.now().date()
-        days_until = (self.start_date - today).days
-        return 0 <= days_until <= self.reminder_days
+
+        now = timezone.now()
+
+        # Construire le datetime de l'événement
+        event_time = self.start_time if self.start_time else dt.min.time()
+        event_datetime = dt.combine(self.start_date, event_time)
+        if timezone.is_aware(now):
+            event_datetime = timezone.make_aware(event_datetime)
+
+        # Calculer le delta du rappel
+        reminder_delta = timedelta(
+            days=self.reminder_days,
+            hours=self.reminder_hours,
+            minutes=self.reminder_minutes,
+        )
+
+        # Le rappel est actif si : event - delta <= now <= event + 15min
+        # (on garde 15 min après l'heure pour ne pas rater la notification)
+        reminder_start = event_datetime - reminder_delta
+        reminder_end = event_datetime + timedelta(minutes=15)
+        return reminder_start <= now <= reminder_end
+
+    @property
+    def reminder_display(self):
+        """Retourne une chaîne lisible du rappel configuré."""
+        if not self.reminder:
+            return ""
+        parts = []
+        if self.reminder_days > 0:
+            parts.append(f"{self.reminder_days} jour{'s' if self.reminder_days > 1 else ''}")
+        if self.reminder_hours > 0:
+            parts.append(f"{self.reminder_hours}h")
+        if self.reminder_minutes > 0:
+            parts.append(f"{self.reminder_minutes}min")
+        if not parts:
+            return "Au moment de l'événement"
+        return " ".join(parts) + " avant"

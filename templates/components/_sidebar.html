@@ -14,10 +14,12 @@
     x-transition:leave-end="-translate-x-full"
 >
 
+    {% load static %}
     <!-- ── Logo & Nom ── -->
     <div class="flex items-center gap-2.5 px-4 py-4 border-b border-pg-border">
-        <!-- Logo P dans un carré arrondi style Notion -->
-        <div class="w-7 h-8 bg-pg-text rounded-md flex items-center justify-center">
+        <img src="{% static 'img/logo.png' %}?v=2" alt="PROGRESS" class="w-8 h-8 rounded-lg object-cover"
+             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <div class="w-7 h-8 bg-pg-accent rounded-md items-center justify-center hidden">
             <span class="text-white font-bold text-sm tracking-tight">P</span>
         </div>
         <div>
