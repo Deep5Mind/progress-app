@@ -32,6 +32,3 @@ nul
 
 # Generated docs
 *.pdf
-
-# Claude Code
-.claude/

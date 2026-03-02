@@ -92,7 +92,7 @@ cozy_student_app/
 
 ## Deploiement
 
-L'application est configuree pour etre deployee sur **Render** (gratuit). Les fichiers `render.yaml`, `build.sh` et `Procfile` sont inclus.
+L'application est configuree pour etre deployee sur **Render**. Les fichiers `render.yaml`, `build.sh` et `Procfile` sont inclus.
 
 En production, l'application utilise :
 - **PostgreSQL** au lieu de SQLite
